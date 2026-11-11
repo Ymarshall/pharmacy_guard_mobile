@@ -6,7 +6,9 @@ import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../config/routes/app_routes.dart';
-import '../widgets/onboarding_item.dart' show OnboardingItem, OnboardingItemData;
+import '../../../../core/constants/storage_keys.dart';
+import '../widgets/onboarding_item.dart'
+    show OnboardingItem, OnboardingItemData;
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -57,18 +59,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_onboarding', true);
+    await prefs.setBool(StorageKeys.onboardingCompleted, true);
 
     if (!mounted) return;
-
-    final cachedUser = prefs.getString('cached_user');
-    final isLoggedIn = cachedUser != null && cachedUser.isNotEmpty;
-
-    if (isLoggedIn) {
-      context.navigateToAndRemoveUntil(AppRoutes.home);
-    } else {
-      context.navigateToAndRemoveUntil(AppRoutes.login);
-    }
+    context.navigateToAndRemoveUntil(AppRoutes.login);
   }
 
   @override
@@ -89,8 +83,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   child: Text(
                     'Passer',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: context.textSecondary,
-                        ),
+                      color: context.textSecondary,
+                    ),
                   ),
                 ),
               ),
@@ -101,9 +95,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 onPageChanged: _onPageChanged,
                 itemCount: _onboardingItems.length,
                 itemBuilder: (context, index) {
-                  return OnboardingItem(
-                    data: _onboardingItems[index],
-                  );
+                  return OnboardingItem(data: _onboardingItems[index]);
                 },
               ),
             ),
@@ -118,7 +110,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: PrimaryButton(
-                label: isLast ? 'Commencer' : 'Suivant',
+                label: isLast ? 'Terminer' : 'Suivant',
                 onPressed: () {
                   if (!isLast) {
                     _pageController.nextPage(

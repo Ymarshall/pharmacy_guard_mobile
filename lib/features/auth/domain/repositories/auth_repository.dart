@@ -4,9 +4,12 @@ import '../entities/auth_response.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, AuthResponse>> loginWithPhone(String phone);
-  
-  Future<Either<Failure, AuthResponse>> createClientAndLogin({
-    required String phone,
+
+  /// Numéro inconnu : inscrit, stocke le jeton, puis la position est envoyée à part.
+  Future<Either<Failure, AuthResponse>> registerClient({required String phone});
+
+  Future<Either<Failure, void>> updateLocation({
+    required int clientId,
     required double latitude,
     required double longitude,
   });
@@ -15,4 +18,3 @@ abstract class AuthRepository {
 
   Future<Either<Failure, AuthResponse?>> getCurrentAuth();
 }
-

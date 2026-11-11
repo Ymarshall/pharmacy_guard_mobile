@@ -56,19 +56,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _initializeDefaultLocation() async {
     // Utiliser la position du client depuis l'auth si disponible
     final authState = ref.read(authNotifierProvider);
-    if (authState.authResponse != null) {
-      final client = authState.authResponse!.client;
+    final latitude = authState.authResponse?.client.latitude;
+    final longitude = authState.authResponse?.client.longitude;
+    if (latitude != null && longitude != null) {
       setState(() {
-        _latitude = client.latitude;
-        _longitude = client.longitude;
+        _latitude = latitude;
+        _longitude = longitude;
       });
-      
+
       final geocodingService = GeocodingServiceImpl();
       final locationInfo = await geocodingService.getLocationInfo(
-        client.latitude,
-        client.longitude,
+        latitude,
+        longitude,
       );
-      
+
       setState(() {
         _city = locationInfo.city;
         _commune = locationInfo.commune;
@@ -78,8 +79,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       final geocodingService = GeocodingServiceImpl();
       final defaultLat = 5.3600;
       final defaultLng = -4.0083;
-      final locationInfo = await geocodingService.getLocationInfo(defaultLat, defaultLng);
-      
+      final locationInfo = await geocodingService.getLocationInfo(
+        defaultLat,
+        defaultLng,
+      );
+
       setState(() {
         _city = locationInfo.city;
         _commune = locationInfo.commune;
@@ -90,15 +94,19 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _loadNearestDutyPharmacies() async {
     // Déterminer les coordonnées à utiliser
     final authState = ref.read(authNotifierProvider);
-    final userLat = _latitude ?? authState.authResponse?.client.latitude ?? 5.3600;
-    final userLng = _longitude ?? authState.authResponse?.client.longitude ?? -4.0083;
-    
+    final userLat =
+        _latitude ?? authState.authResponse?.client.latitude ?? 5.3600;
+    final userLng =
+        _longitude ?? authState.authResponse?.client.longitude ?? -4.0083;
+
     // Charger les 3 pharmacies de garde les plus proches depuis l'API
-    await ref.read(pharmacyNotifierProvider.notifier).getNearestDutyPharmacies(
-      latitude: userLat,
-      longitude: userLng,
-      limit: 3,
-    );
+    await ref
+        .read(pharmacyNotifierProvider.notifier)
+        .getNearestDutyPharmacies(
+          latitude: userLat,
+          longitude: userLng,
+          limit: 3,
+        );
   }
 
   Future<void> _loadAllPharmaciesForSearch() async {
@@ -107,12 +115,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() {
         _isLoadingAllPharmacies = true;
       });
-      
+
       try {
         // Utiliser directement le repository pour récupérer toutes les pharmacies
         final repository = ref.read(providers.pharmacyRepositoryProvider);
         final result = await repository.getAllPharmacies();
-        
+
         result.fold(
           (failure) {
             setState(() {
@@ -138,21 +146,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       final locationService = LocationServiceImpl();
       final position = await locationService.getCurrentLocation();
-      
+
       // Obtenir les informations de localisation (ville, commune)
       final geocodingService = GeocodingServiceImpl();
       final locationInfo = await geocodingService.getLocationInfo(
         position.latitude,
         position.longitude,
       );
-      
+
       setState(() {
         _latitude = position.latitude;
         _longitude = position.longitude;
         _city = locationInfo.city;
         _commune = locationInfo.commune;
       });
-      
+
       // Recharger les pharmacies de garde les plus proches avec la nouvelle position
       await _loadNearestDutyPharmacies();
     } catch (e) {
@@ -160,8 +168,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       final geocodingService = GeocodingServiceImpl();
       final defaultLat = _latitude ?? 5.3600;
       final defaultLng = _longitude ?? -4.0083;
-      final locationInfo = await geocodingService.getLocationInfo(defaultLat, defaultLng);
-      
+      final locationInfo = await geocodingService.getLocationInfo(
+        defaultLat,
+        defaultLng,
+      );
+
       setState(() {
         _city = locationInfo.city;
         _commune = locationInfo.commune;
@@ -181,66 +192,91 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Le filtrage sera fait dans le build
     });
   }
-  
-  List<Pharmacy> _getFilteredAndSortedPharmacies(List<Pharmacy> pharmacies, String query) {
+
+  List<Pharmacy> _getFilteredAndSortedPharmacies(
+    List<Pharmacy> pharmacies,
+    String query,
+  ) {
     // Filtrer les pharmacies selon la recherche
     List<Pharmacy> filtered = pharmacies;
     if (query.isNotEmpty) {
       final queryLower = query.toLowerCase().trim();
-      filtered = pharmacies.where((pharmacy) {
-        // Recherche par nom
-        if (pharmacy.name.toLowerCase().contains(queryLower)) return true;
-        
-        // Recherche par ville
-        if (pharmacy.city != null && pharmacy.city!.toLowerCase().contains(queryLower)) return true;
-        
-        // Recherche par commune
-        if (pharmacy.commune != null && pharmacy.commune!.toLowerCase().contains(queryLower)) return true;
-        
-        // Recherche par district
-        if (pharmacy.district != null && pharmacy.district!.toLowerCase().contains(queryLower)) return true;
-        
-        // Recherche par adresse complète
-        final address = _getPharmacyAddress(pharmacy);
-        if (address.toLowerCase().contains(queryLower)) return true;
-        
-        // Recherche par nom du pharmacien
-        if (pharmacy.pharmacistName != null && pharmacy.pharmacistName!.toLowerCase().contains(queryLower)) return true;
-        
-        // Recherche par téléphone
-        if (pharmacy.phone1.toLowerCase().contains(queryLower)) return true;
-        if (pharmacy.phone2 != null && pharmacy.phone2!.toLowerCase().contains(queryLower)) return true;
-        
-        return false;
-      }).toList();
+      filtered =
+          pharmacies.where((pharmacy) {
+            // Recherche par nom
+            if (pharmacy.name.toLowerCase().contains(queryLower)) return true;
+
+            // Recherche par ville
+            if (pharmacy.city != null &&
+                pharmacy.city!.toLowerCase().contains(queryLower))
+              return true;
+
+            // Recherche par commune
+            if (pharmacy.commune != null &&
+                pharmacy.commune!.toLowerCase().contains(queryLower))
+              return true;
+
+            // Recherche par district
+            if (pharmacy.district != null &&
+                pharmacy.district!.toLowerCase().contains(queryLower))
+              return true;
+
+            // Recherche par adresse complète
+            final address = _getPharmacyAddress(pharmacy);
+            if (address.toLowerCase().contains(queryLower)) return true;
+
+            // Recherche par nom du pharmacien
+            if (pharmacy.pharmacistName != null &&
+                pharmacy.pharmacistName!.toLowerCase().contains(queryLower))
+              return true;
+
+            // Recherche par téléphone
+            if (pharmacy.phone1.toLowerCase().contains(queryLower)) return true;
+            if (pharmacy.phone2 != null &&
+                pharmacy.phone2!.toLowerCase().contains(queryLower))
+              return true;
+
+            return false;
+          }).toList();
     }
-    
+
     // Trier par proximité si on a une position
-    final userLat = _latitude ?? ref.read(authNotifierProvider).authResponse?.client.latitude;
-    final userLng = _longitude ?? ref.read(authNotifierProvider).authResponse?.client.longitude;
-    
+    final userLat =
+        _latitude ??
+        ref.read(authNotifierProvider).authResponse?.client.latitude;
+    final userLng =
+        _longitude ??
+        ref.read(authNotifierProvider).authResponse?.client.longitude;
+
     if (userLat != null && userLng != null) {
       // Calculer la distance pour chaque pharmacie et trier
-      final pharmaciesWithDistance = filtered.map((pharmacy) {
-        final distance = DistanceUtils.calculateDistance(
-          userLat,
-          userLng,
-          pharmacy.latitude,
-          pharmacy.longitude,
-        );
-        return (pharmacy as PharmacyModel).copyWith(distance: distance);
-      }).toList();
-      
+      final pharmaciesWithDistance =
+          filtered.map((pharmacy) {
+            final distance =
+                pharmacy.hasGps
+                    ? DistanceUtils.distanceIfPossible(
+                      userLat,
+                      userLng,
+                      pharmacy.latitude,
+                      pharmacy.longitude,
+                    )
+                    : null;
+            return (pharmacy as PharmacyModel).copyWith(
+              distance: distance,
+              clearDistance: distance == null,
+            );
+          }).toList();
+
       // Trier par distance (les plus proches en premier)
       pharmaciesWithDistance.sort((a, b) {
         final distA = a.distance ?? double.infinity;
         final distB = b.distance ?? double.infinity;
         return distA.compareTo(distB);
       });
-      
+
       return pharmaciesWithDistance;
     }
-    
+
     // Si pas de position, retourner sans tri
     return filtered;
   }
@@ -269,18 +305,19 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final pharmacyState = ref.watch(pharmacyNotifierProvider);
     final authState = ref.watch(authNotifierProvider);
-    
+
     // Déterminer les coordonnées à utiliser pour calculer la distance
     final userLat = _latitude ?? authState.authResponse?.client.latitude;
     final userLng = _longitude ?? authState.authResponse?.client.longitude;
-    
+
     // Choisir la liste de pharmacies à utiliser
     // Si recherche active : utiliser toutes les pharmacies
     // Sinon : utiliser les pharmacies de garde les plus proches
-    final pharmaciesToUse = _searchController.text.isNotEmpty 
-        ? _allPharmacies 
-        : pharmacyState.pharmacies;
-    
+    final pharmaciesToUse =
+        _searchController.text.isNotEmpty
+            ? _allPharmacies
+            : pharmacyState.pharmacies;
+
     // Filtrer et trier les pharmacies selon la recherche et la proximité
     final filteredPharmacies = _getFilteredAndSortedPharmacies(
       pharmaciesToUse,
@@ -307,134 +344,139 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: Padding(
         padding: const EdgeInsets.only(bottom: 96),
         child: Column(
-        children: [
-          Container(
-            color: context.primaryDark,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.sm,
-                  AppSpacing.xl2,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                          icon: const Icon(Icons.menu, color: Colors.white),
-                          tooltip: 'Menu',
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Pharmacie de Garde',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
+          children: [
+            Container(
+              color: context.primaryDark,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                    AppSpacing.xl2,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed:
+                                () => _scaffoldKey.currentState?.openDrawer(),
+                            icon: const Icon(Icons.menu, color: Colors.white),
+                            tooltip: 'Menu',
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.logout_outlined,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => _showLogoutDialog(context),
-                          tooltip: 'Déconnexion',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Padding(
-                      padding: const EdgeInsets.only(left: AppSpacing.sm),
-                      child: Text(
-                        searching
-                            ? 'Recherche'
-                            : 'Pharmacies de garde\nà proximité',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
+                          Expanded(
+                            child: Text(
+                              'Pharmacie de Garde',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.logout_outlined,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _showLogoutDialog(context),
+                            tooltip: 'Déconnexion',
+                          ),
+                        ],
                       ),
-                    ),
-                    if (_city != null && _commune != null) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Padding(
                         padding: const EdgeInsets.only(left: AppSpacing.sm),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_outlined,
-                              size: 16,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$_commune, $_city',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: Colors.white70),
-                            ),
-                          ],
+                        child: Text(
+                          searching
+                              ? 'Recherche'
+                              : 'Pharmacies de garde\nà proximité',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
+                      if (_city != null && _commune != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Padding(
+                          padding: const EdgeInsets.only(left: AppSpacing.sm),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$_commune, $_city',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.lg),
+                      SearchBarWidget(
+                        controller: _searchController,
+                        onChanged: _onSearch,
+                      ),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
-                    SearchBarWidget(
-                      controller: _searchController,
-                      onChanged: _onSearch,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: pharmacyState.isLoading
-                ? const LoadingWidget(message: 'Chargement des pharmacies...')
-                : Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                          AppSpacing.sm,
-                        ),
-                        child: SectionHeader(
-                          eyebrow: searching ? 'Recherche' : 'À proximité',
-                          title: searching
-                              ? '${filteredPharmacies.length} résultat${filteredPharmacies.length > 1 ? 's' : ''}'
-                              : 'Pharmacies de garde',
-                        ),
+            Expanded(
+              child:
+                  pharmacyState.isLoading
+                      ? const LoadingWidget(
+                        message: 'Chargement des pharmacies...',
+                      )
+                      : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.lg,
+                              AppSpacing.lg,
+                              AppSpacing.lg,
+                              AppSpacing.sm,
+                            ),
+                            child: SectionHeader(
+                              eyebrow: searching ? 'Recherche' : 'À proximité',
+                              title:
+                                  searching
+                                      ? '${filteredPharmacies.length} résultat${filteredPharmacies.length > 1 ? 's' : ''}'
+                                      : 'Pharmacies de garde',
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildPharmacyList(filteredPharmacies),
+                          ),
+                        ],
                       ),
-                      Expanded(child: _buildPharmacyList(filteredPharmacies)),
-                    ],
-                  ),
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPharmacyList(List<Pharmacy> pharmacies) {
     final authState = ref.read(authNotifierProvider);
-    
+
     if (pharmacies.isEmpty) {
       return const EmptyState(
         icon: Icons.local_pharmacy_outlined,
         title: 'Aucune pharmacie de garde trouvée',
-        message:
-            'Aucune pharmacie de garde n\'est disponible pour le moment',
+        message: 'Aucune pharmacie de garde n\'est disponible pour le moment',
       );
     }
 
@@ -445,7 +487,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         final pharmacy = pharmacies[index];
         final userLat = _latitude ?? authState.authResponse?.client.latitude;
         final userLng = _longitude ?? authState.authResponse?.client.longitude;
-        
+
         return PharmacyCard(
           pharmacy: pharmacy,
           userLatitude: userLat,
@@ -454,11 +496,12 @@ class _HomePageState extends ConsumerState<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PharmacyDetailPage(
-                  pharmacy: pharmacy,
-                  userLatitude: userLat,
-                  userLongitude: userLng,
-                ),
+                builder:
+                    (context) => PharmacyDetailPage(
+                      pharmacy: pharmacy,
+                      userLatitude: userLat,
+                      userLongitude: userLng,
+                    ),
               ),
             );
           },

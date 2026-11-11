@@ -14,8 +14,8 @@ class ClientModel extends Client {
     return ClientModel(
       id: json['id'] as int,
       phone: json['phone'] as String,
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       providerType: json['providerType'] as String? ?? 'PHONE',
       isActive: json['isActive'] as bool? ?? true,
     );

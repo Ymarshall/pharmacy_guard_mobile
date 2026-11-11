@@ -1,8 +1,8 @@
 class Client {
   final int id;
   final String phone;
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
   final String providerType;
   final bool isActive;
 

@@ -2,10 +2,10 @@
 abstract class Failure {
   final String message;
   const Failure(this.message);
-  
+
   @override
   String toString() => message;
-  
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -39,6 +39,16 @@ class NotFoundFailure extends Failure {
   const NotFoundFailure(super.message);
 }
 
+class ConflictFailure extends Failure {
+  const ConflictFailure(super.message);
+}
+
+class ValidationFailure extends Failure {
+  final Map<String, String> fieldErrors;
+
+  const ValidationFailure(super.message, {this.fieldErrors = const {}});
+}
+
 /// Permission related failures
 class PermissionFailure extends Failure {
   const PermissionFailure(super.message);
@@ -48,4 +58,3 @@ class PermissionFailure extends Failure {
 class LocationFailure extends Failure {
   const LocationFailure(super.message);
 }
-

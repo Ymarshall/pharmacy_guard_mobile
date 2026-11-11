@@ -9,8 +9,10 @@ import '../../../../shared/widgets/input_field.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../config/routes/app_routes.dart';
+import '../../../../core/providers/providers.dart';
 import '../providers/auth_notifier.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../core/utils/ivorian_phone.dart';
 import '../../../../core/services/permission_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -31,6 +33,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
+  bool _resumePendingAction() {
+    final gate = ref.read(reconnectGateProvider);
+    if (!gate.isWaiting) return false;
+    gate.succeed();
+    if (mounted) Navigator.of(context).maybePop();
+    return true;
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -43,18 +53,73 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.read(authNotifierProvider);
     setState(() => _isLoading = false);
 
-    if (authState.needsLocation) {
-      // Le client n'existe pas, on doit demander la géolocalisation via un popup
+    if (authState.needsRegistration) {
+      _showRegisterDialog(phone);
+    } else if (authState.isAuthenticated && authState.needsLocation) {
       _showLocationPermissionDialog(phone);
     } else if (authState.isAuthenticated) {
-      // Connexion réussie
-      if (mounted) {
-        context.navigateToAndRemoveUntil(AppRoutes.home);
+      if (!_resumePendingAction()) {
+        if (mounted) {
+          context.navigateToAndRemoveUntil(AppRoutes.home);
+        }
       }
-    } else if (authState.error != null) {
-      // Erreur de connexion
+    } else if (authState.phoneError == null && authState.error != null) {
       if (mounted) {
         context.showErrorSnackBar(authState.error!);
+      }
+    }
+  }
+
+  void _showRegisterDialog(String phone) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Créer un compte'),
+          content: const Text(
+            'Ce numéro n\'est pas encore inscrit. Nous créons votre compte, '
+            'puis nous vous demanderons votre position pour les pharmacies proches.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _register(phone);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Créer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _register(String phone) async {
+    await ref.read(authNotifierProvider.notifier).registerClient(phone: phone);
+    if (!mounted) return;
+    final authState = ref.read(authNotifierProvider);
+    if (authState.needsLocation && authState.isAuthenticated) {
+      _showLocationPermissionDialog(phone);
+      return;
+    }
+    if (authState.isAuthenticated) {
+      if (!_resumePendingAction() && mounted) {
+        context.navigateToAndRemoveUntil(AppRoutes.home);
       }
     }
   }
@@ -81,14 +146,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ],
           ),
           content: const Text(
-            'Pour créer votre compte, nous avons besoin de votre position. '
-            'Cela nous permet de vous proposer les pharmacies de garde les plus proches de vous.',
+            'Votre compte est créé. Autorisez la géolocalisation pour afficher '
+            'les pharmacies de garde les plus proches.',
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
                 setState(() => _isLoading = false);
+                if (ref.read(authNotifierProvider).isAuthenticated && mounted) {
+                  context.navigateToAndRemoveUntil(AppRoutes.home);
+                }
               },
               child: const Text('Annuler'),
             ),
@@ -155,44 +223,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     // Afficher un loader pendant l'enregistrement
     if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return PopScope(
-              canPop: false,
-              child: AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Enregistrement en cours...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Création de votre compte',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return PopScope(
+            canPop: false,
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-            );
-          },
-        );
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: AppColors.primary),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Enregistrement en cours...',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Création de votre compte',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
     }
 
     // Obtenir la position et créer le compte
@@ -213,9 +276,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 24),
                     const Text(
                       'Récupération de votre position...',
@@ -251,9 +312,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 24),
                     const Text(
                       'Enregistrement en cours...',
@@ -278,9 +337,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
       }
 
-      // Créer le compte avec la position
-      await ref.read(authNotifierProvider.notifier).createClientAndLogin(
-            phone: phone,
+      await ref
+          .read(authNotifierProvider.notifier)
+          .updateLocation(
             latitude: position.latitude,
             longitude: position.longitude,
           );
@@ -292,9 +351,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       final authState = ref.read(authNotifierProvider);
 
-      if (authState.isAuthenticated) {
+      if (authState.isAuthenticated && authState.error == null) {
+        if (_resumePendingAction()) return;
         if (mounted) {
-          // Afficher un message de succès brièvement avant la redirection
           context.showSnackBar('Compte créé avec succès !');
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
@@ -316,6 +375,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   TextButton(
                     onPressed: () {
                       Navigator.pop(dialogContext);
+                      if (authState.isAuthenticated && mounted) {
+                        context.navigateToAndRemoveUntil(AppRoutes.home);
+                      }
                     },
                     child: const Text('OK'),
                   ),
@@ -330,19 +392,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         Navigator.pop(context);
       }
-      
+
       String errorMessage = 'Erreur lors de la création de votre compte';
-      
+
       // Messages d'erreur plus explicites
-      if (e.toString().contains('location') || e.toString().contains('position')) {
-        errorMessage = 'Impossible de récupérer votre position.\n\n'
+      if (e.toString().contains('location') ||
+          e.toString().contains('position')) {
+        errorMessage =
+            'Impossible de récupérer votre position.\n\n'
             'Sur le simulateur, vous devez configurer une position :\n'
             '• iOS Simulator : Features > Location > Custom Location...\n'
             '• Android Emulator : Utilisez les contrôles de localisation dans la barre latérale';
       } else {
         errorMessage = 'Erreur : ${e.toString()}';
       }
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -403,8 +467,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       Text(
                         'Entrez votre numéro de téléphone pour trouver les pharmacies de garde près de vous.',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: context.textSecondary,
-                            ),
+                          color: context.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.xl3),
                       InputField(
@@ -417,27 +481,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           Icons.phone_outlined,
                           color: context.primary,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre numéro de téléphone';
+                        errorText: authState.phoneError,
+                        onChanged: (_) {
+                          if (ref.read(authNotifierProvider).phoneError != null) {
+                            ref
+                                .read(authNotifierProvider.notifier)
+                                .clearPhoneError();
                           }
-                          final cleaned =
-                              value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-                          if (cleaned.length < 8) {
-                            return 'Numéro de téléphone invalide';
-                          }
-                          return null;
                         },
+                        validator: IvorianPhone.validationMessage,
                       ),
-                      if (authState.error != null &&
-                          !authState.needsLocation) ...[
+                      if (authState.phoneError == null &&
+                          authState.error != null &&
+                          !authState.needsLocation &&
+                          !authState.needsRegistration) ...[
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           authState.error!,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: context.error),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: context.error),
                         ),
                       ],
                     ],

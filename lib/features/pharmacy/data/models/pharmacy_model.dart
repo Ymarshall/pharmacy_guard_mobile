@@ -31,13 +31,21 @@ class PharmacyModel extends Pharmacy {
     // L'API peut retourner id comme int ou String
     final idValue = json['id'];
     final id = idValue is int ? idValue.toString() : idValue as String;
-    
+
     // Parser les assurances
     final assurancesList = json['assurances'] as List<dynamic>?;
-    final assurances = assurancesList != null
-        ? assurancesList.map((e) => InsuranceModel.fromJson(e as Map<String, dynamic>)).toList()
-        : <Insurance>[];
-    
+    final assurances =
+        assurancesList != null
+            ? assurancesList
+                .map((e) => InsuranceModel.fromJson(e as Map<String, dynamic>))
+                .toList()
+            : <Insurance>[];
+
+    final coordinates = _readCoordinates(json);
+    final latitude = coordinates.$1;
+    final longitude = coordinates.$2;
+    final hasGps = latitude != null && longitude != null;
+
     return PharmacyModel(
       id: id,
       name: json['name'] as String,
@@ -52,19 +60,57 @@ class PharmacyModel extends Pharmacy {
       pharmacistName: json['pharmacistName'] as String?,
       photo: json['photo'] as String?,
       statut: json['statut'] as String? ?? 'ACTIF',
-      location: json['location'] as String?,
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      location: coordinates.$3,
+      latitude: latitude,
+      longitude: longitude,
       assurances: assurances,
-      distance: json['distanceInKm'] != null 
-          ? ((json['distanceInKm'] as num?)?.toDouble() ?? null)
-          : (json['distance'] != null ? ((json['distance'] as num?)?.toDouble() ?? null) : null),
-      isOpen: json['isOpen'] as bool? ?? true, // Par défaut true, à calculer selon horaires
-      isOnDuty: json['isOnDuty'] as bool? ?? false, // Vient directement de l'API
-      averageRating: json['averageRating'] != null 
-          ? ((json['averageRating'] as num?)?.toDouble() ?? null)
-          : null,
+      distance: hasGps ? _readDistance(json) : null,
+      isOpen:
+          json['isOpen'] as bool? ??
+          true, // Par défaut true, à calculer selon horaires
+      isOnDuty:
+          json['isOnDuty'] as bool? ?? false, // Vient directement de l'API
+      averageRating:
+          json['averageRating'] != null
+              ? ((json['averageRating'] as num?)?.toDouble() ?? null)
+              : null,
     );
+  }
+
+  static (double?, double?, String?) _readCoordinates(
+    Map<String, dynamic> json,
+  ) {
+    final rawLocation = json['location'];
+    final location =
+        rawLocation is String && rawLocation.trim().isNotEmpty
+            ? rawLocation.trim()
+            : null;
+    var latitude = _asDouble(json['latitude']);
+    var longitude = _asDouble(json['longitude']);
+    if ((latitude == null || longitude == null) && location != null) {
+      final parts = location.split(',');
+      if (parts.length == 2) {
+        latitude ??= double.tryParse(parts[0].trim());
+        longitude ??= double.tryParse(parts[1].trim());
+      }
+    }
+    if (latitude == null || longitude == null) {
+      return (null, null, location);
+    }
+    return (latitude, longitude, location);
+  }
+
+  static double? _asDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  static double? _readDistance(Map<String, dynamic> json) {
+    final raw = json['distanceInKm'] ?? json['distance'];
+    if (raw == null) return null;
+    if (raw is num) return raw.toDouble();
+    return double.tryParse(raw.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -85,7 +131,8 @@ class PharmacyModel extends Pharmacy {
       'location': location,
       'latitude': latitude,
       'longitude': longitude,
-      'assurances': assurances.map((a) => (a as InsuranceModel).toJson()).toList(),
+      'assurances':
+          assurances.map((a) => (a as InsuranceModel).toJson()).toList(),
       'distance': distance,
       'isOpen': isOpen,
       'isOnDuty': isOnDuty,
@@ -112,6 +159,7 @@ class PharmacyModel extends Pharmacy {
     double? longitude,
     List<Insurance>? assurances,
     double? distance,
+    bool clearDistance = false,
     bool? isOpen,
     bool? isOnDuty,
     double? averageRating,
@@ -134,7 +182,7 @@ class PharmacyModel extends Pharmacy {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       assurances: assurances ?? this.assurances,
-      distance: distance ?? this.distance,
+      distance: clearDistance ? null : (distance ?? this.distance),
       isOpen: isOpen ?? this.isOpen,
       isOnDuty: isOnDuty ?? this.isOnDuty,
       averageRating: averageRating ?? this.averageRating,

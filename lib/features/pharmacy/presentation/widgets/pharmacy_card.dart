@@ -54,83 +54,104 @@ class _PharmacyCardState extends State<PharmacyCard>
   @override
   Widget build(BuildContext context) {
     return SurfaceCard(
-          margin: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.sm,
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onTap,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.pharmacy.name,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.onSurface,
+                    height: 1.25,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _getAddress(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: context.textSecondary,
+                    height: 1.25,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      widget.pharmacy.name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: context.onSurface,
-                            height: 1.25,
+                    _buildStatusBadge(),
+                    if (widget.pharmacy.hasGps &&
+                        widget.pharmacy.distance != null) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDistanceLine(
+                          context,
+                          widget.pharmacy.distance!,
+                        ),
+                      ),
+                    ] else if (!widget.pharmacy.hasGps) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Localisation indisponible',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color: context.textTertiary,
+                            fontSize: 12,
                           ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getAddress(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: context.textSecondary,
-                            height: 1.25,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildStatusBadge(),
-                        if (widget.pharmacy.distance != null) ...[
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildDistanceLine(
-                              context,
-                              widget.pharmacy.distance!,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _roundAction(
-                      icon: Icons.phone_outlined,
-                      label: 'Appeler',
-                      background: context.primarySurface,
-                      foreground: context.primary,
-                      onPressed: _callPharmacy,
-                    ),
-                    _roundAction(
-                      icon: Icons.directions_outlined,
-                      label: 'Itinéraire',
-                      background: context.surfaceSubtle,
-                      foreground: context.primary,
-                      onPressed: _openDirections,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _roundAction(
+                  icon: Icons.phone_outlined,
+                  label: 'Appeler',
+                  background: context.primarySurface,
+                  foreground: context.primary,
+                  onPressed: _callPharmacy,
+                ),
+                _roundAction(
+                  icon: Icons.directions_outlined,
+                  label:
+                      widget.pharmacy.hasGps
+                          ? 'Itinéraire'
+                          : 'Localisation indisponible',
+                  background: context.surfaceSubtle,
+                  foreground: context.primary,
+                  onPressed: widget.pharmacy.hasGps ? _openDirections : null,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -179,10 +200,10 @@ class _PharmacyCardState extends State<PharmacyCard>
 
   Widget _buildDistanceLine(BuildContext context, double distance) {
     final style = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: context.textTertiary,
-          fontSize: 12,
-          height: 1.2,
-        );
+      color: context.textTertiary,
+      fontSize: 12,
+      height: 1.2,
+    );
     return Row(
       children: [
         Icon(
@@ -224,7 +245,7 @@ class _PharmacyCardState extends State<PharmacyCard>
     required String label,
     required Color background,
     required Color foreground,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   }) {
     return IconButton(
       onPressed: onPressed,
@@ -250,6 +271,7 @@ class _PharmacyCardState extends State<PharmacyCard>
   }
 
   Future<void> _openDirections() async {
+    if (!widget.pharmacy.hasGps) return;
     if (widget.userLatitude != null && widget.userLongitude != null) {
       final uri = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&origin=${widget.userLatitude},${widget.userLongitude}&destination=${widget.pharmacy.latitude},${widget.pharmacy.longitude}&travelmode=driving',
@@ -296,13 +318,15 @@ class _PharmacyCardState extends State<PharmacyCard>
 
   String _getAddress() {
     final parts = <String>[];
-    if (widget.pharmacy.commune != null && widget.pharmacy.commune!.isNotEmpty) {
+    if (widget.pharmacy.commune != null &&
+        widget.pharmacy.commune!.isNotEmpty) {
       parts.add(widget.pharmacy.commune!);
     }
     if (widget.pharmacy.city != null && widget.pharmacy.city!.isNotEmpty) {
       parts.add(widget.pharmacy.city!);
     }
-    if (widget.pharmacy.district != null && widget.pharmacy.district!.isNotEmpty) {
+    if (widget.pharmacy.district != null &&
+        widget.pharmacy.district!.isNotEmpty) {
       parts.add(widget.pharmacy.district!);
     }
     return parts.isNotEmpty ? parts.join(', ') : 'Adresse non disponible';

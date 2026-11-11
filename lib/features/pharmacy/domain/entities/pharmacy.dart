@@ -14,9 +14,9 @@ class Pharmacy {
   final String? pharmacistName;
   final String? photo;
   final String statut;
-  final String? location; // Format "lat,lng"
-  final double latitude;
-  final double longitude;
+  final String? location; // Format "lat,lng", null si pas de GPS
+  final double? latitude;
+  final double? longitude;
   final List<Insurance> assurances;
   final double? distance; // in kilometers (calculé côté client)
   final bool isOpen; // Calculé côté client
@@ -46,6 +46,9 @@ class Pharmacy {
     required this.isOnDuty,
     this.averageRating,
   });
+
+  /// Faux quand le backend envoie `location: null` (pas de coordonnées).
+  bool get hasGps => latitude != null && longitude != null;
 
   @override
   bool operator ==(Object other) {

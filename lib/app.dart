@@ -9,32 +9,50 @@ import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 
-class App extends ConsumerWidget {
+class App extends StatelessWidget {
   final SharedPreferences sharedPreferences;
-  
-  const App({super.key, required this.sharedPreferences});
+  final bool onboardingCompleted;
+
+  const App({
+    super.key,
+    required this.sharedPreferences,
+    required this.onboardingCompleted,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return ProviderScope(
       overrides: [
         // Override le provider avec la valeur déjà chargée
         sharedPreferencesInstanceProvider.overrideWithValue(sharedPreferences),
       ],
-      child: MaterialApp(
-        title: 'Pharmacie de Garde',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: AppTheme.getThemeMode(),
-        initialRoute: AppRoutes.splash,
-        routes: {
-          AppRoutes.splash: (context) => const SplashPage(),
-          AppRoutes.onboarding: (context) => const OnboardingPage(),
-          AppRoutes.login: (context) => const LoginPage(),
-          AppRoutes.home: (context) => const HomePage(),
-        },
-      ),
+      child: _PharmacieApp(onboardingCompleted: onboardingCompleted),
+    );
+  }
+}
+
+class _PharmacieApp extends ConsumerWidget {
+  final bool onboardingCompleted;
+
+  const _PharmacieApp({required this.onboardingCompleted});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      navigatorKey: ref.watch(reconnectGateProvider).navigatorKey,
+      title: 'Pharmacie de Garde',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: AppTheme.getThemeMode(),
+      initialRoute: AppRoutes.splash,
+      routes: {
+        AppRoutes.splash:
+            (context) => SplashPage(onboardingCompleted: onboardingCompleted),
+        AppRoutes.onboarding: (context) => const OnboardingPage(),
+        AppRoutes.login: (context) => const LoginPage(),
+        AppRoutes.home: (context) => const HomePage(),
+      },
     );
   }
 }

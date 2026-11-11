@@ -80,7 +80,7 @@ void main() {
     }
 
     await shoot(
-      const SplashPage(),
+      const SplashPage(onboardingCompleted: true),
       '01-splash',
       settle: const Duration(milliseconds: 1600),
     );
