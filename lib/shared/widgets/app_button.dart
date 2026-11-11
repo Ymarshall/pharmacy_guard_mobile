@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../config/themes/colors.dart';
+import 'primary_button.dart';
 
 class AppButton extends StatelessWidget {
   final String text;
@@ -27,82 +27,23 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonWidth = width ?? double.infinity;
-    final buttonHeight = height ?? 48.0;
-
-    if (isOutlined) {
-      return SizedBox(
-        width: buttonWidth,
-        height: buttonHeight,
-        child: OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(
-              color: backgroundColor ?? AppColors.primary,
-              width: 1.5,
-            ),
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          ),
-          child: _buildButtonContent(),
-        ),
-      );
-    }
-
-    return SizedBox(
-      width: buttonWidth,
-      height: buttonHeight,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppColors.primary,
-          foregroundColor: textColor ?? AppColors.textLight,
-          elevation: 0,
-          shadowColor: AppColors.shadowMedium,
-          shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
-        child: _buildButtonContent(),
-      ),
+    final button = PrimaryButton(
+      label: text,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      icon: icon,
+      isFullWidth: width == null || width == double.infinity,
+      variant: isOutlined ? ButtonVariant.outline : ButtonVariant.primary,
+      backgroundColor: backgroundColor,
+      foregroundColor: textColor,
     );
-  }
 
-  Widget _buildButtonContent() {
-    if (isLoading) {
-      return const SizedBox(
-        height: 20,
-        width: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      );
+    if (width != null && width != double.infinity) {
+      return SizedBox(width: width, height: height, child: button);
     }
-
-    if (icon != null) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      );
+    if (height != null) {
+      return SizedBox(height: height, child: button);
     }
-
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-      ),
-    );
+    return button;
   }
 }
-

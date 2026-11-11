@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../config/themes/colors.dart';
+import '../../core/constants/app_spacing.dart';
+import '../../core/extensions/theme_extension.dart';
 
 class LoadingWidget extends StatelessWidget {
   final String? message;
@@ -13,23 +14,26 @@ class LoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final indicator = color ?? context.primary;
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              color ?? AppColors.primary,
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.4,
+              color: indicator,
             ),
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               message!,
-              style: TextStyle(
-                color: color ?? AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: context.textTertiary,
+                  ),
             ),
           ],
         ],
@@ -37,4 +41,3 @@ class LoadingWidget extends StatelessWidget {
     );
   }
 }
-

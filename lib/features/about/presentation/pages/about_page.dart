@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_decorations.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/styles/text_styles.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/icon_chip.dart';
+import '../../../../shared/widgets/screen_app_bar.dart';
+import '../../../../shared/widgets/surface_card.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -10,10 +16,8 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('À propos'),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'À propos'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -23,18 +27,10 @@ class AboutPage extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.primary.withOpacity(0.1),
-                    ),
-                    child: const Icon(
-                      Icons.local_pharmacy,
-                      size: 50,
-                      color: AppColors.primary,
-                    ),
+                  const IconChip(
+                    icon: Icons.local_pharmacy_outlined,
+                    size: 72,
+                    iconSize: 34,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -95,29 +91,26 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildSourceItem(
+                    context,
                     'Ordre National des Pharmaciens de Côte d\'Ivoire',
                     'Liste officielle des pharmacies autorisées et de garde.',
                   ),
                   const SizedBox(height: 12),
                   _buildSourceItem(
+                    context,
                     'Ministère de la Santé',
                     'Données validées par les autorités sanitaires.',
                   ),
                   const SizedBox(height: 12),
                   _buildSourceItem(
+                    context,
                     'Pharmacies partenaires',
                     'Informations mises à jour directement par les pharmacies.',
                   ),
                   const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
-                      ),
-                    ),
+                    padding: AppSpacing.paddingLg,
+                    decoration: AppDecorations.accentCard(context, context.primary),
                     child: Row(
                       children: [
                         const Icon(
@@ -151,6 +144,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _buildContactCard(
+                    context,
                     icon: Icons.email,
                     title: 'Email',
                     value: 'support@pharmaciedegarde.ci',
@@ -163,6 +157,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildContactCard(
+                    context,
                     icon: Icons.phone,
                     title: 'Téléphone',
                     value: '+225 XX XX XX XX XX',
@@ -175,6 +170,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildContactCard(
+                    context,
                     icon: Icons.language,
                     title: 'Site web',
                     value: 'www.pharmaciedegarde.ci',
@@ -187,6 +183,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildContactCard(
+                    context,
                     icon: Icons.access_time,
                     title: 'Horaires',
                     value: 'Lun-Ven: 8h-18h',
@@ -225,10 +222,12 @@ class AboutPage extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.primary, size: 28),
             const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyles.titleLarge.copyWith(
-                color: AppColors.primary,
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyles.titleLarge.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ],
@@ -275,16 +274,15 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSourceItem(String title, String description) {
+  Widget _buildSourceItem(
+    BuildContext context,
+    String title,
+    String description,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.border,
-        ),
-      ),
+      width: double.infinity,
+      padding: AppSpacing.paddingLg,
+      decoration: AppDecorations.cardDecorationFlat(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -304,32 +302,19 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactCard({
+  Widget _buildContactCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String value,
     VoidCallback? onTap,
   }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+    return SurfaceCard(
+      onTap: onTap,
+      margin: const EdgeInsets.only(bottom: 0),
+      child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                ),
-              ),
+              IconChip(icon: icon),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -357,15 +342,13 @@ class AboutPage extends StatelessWidget {
                 ),
               ),
               if (onTap != null)
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: AppColors.textSecondary,
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: context.textTertiary,
                 ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

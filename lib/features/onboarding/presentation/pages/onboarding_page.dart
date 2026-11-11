@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../../../config/routes/app_routes.dart';
 import '../widgets/onboarding_item.dart' show OnboardingItem, OnboardingItemData;
 
@@ -21,14 +24,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
       title: 'Trouvez votre pharmacie',
       description:
           'Localisez rapidement les pharmacies de garde les plus proches de vous, 24h/24 et 7j/7.',
-      icon: Icons.local_pharmacy,
+      icon: Icons.local_pharmacy_outlined,
       color: AppColors.primary,
     ),
     OnboardingItemData(
       title: 'Pharmacies de garde',
       description:
           'Accédez à la liste complète des pharmacies de garde disponibles dans votre région.',
-      icon: Icons.medical_services,
+      icon: Icons.medical_services_outlined,
       color: AppColors.primaryLight,
     ),
     OnboardingItemData(
@@ -55,13 +58,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_onboarding', true);
-    
+
     if (!mounted) return;
-    
-    // Vérifier si l'utilisateur est déjà connecté
+
     final cachedUser = prefs.getString('cached_user');
     final isLoggedIn = cachedUser != null && cachedUser.isNotEmpty;
-    
+
     if (isLoggedIn) {
       context.navigateToAndRemoveUntil(AppRoutes.home);
     } else {
@@ -71,25 +73,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLast = _currentPage >= _onboardingItems.length - 1;
+
     return Scaffold(
+      backgroundColor: context.background,
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
             Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _completeOnboarding,
-                child: const Text(
-                  'Passer',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 16,
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: TextButton(
+                  onPressed: _completeOnboarding,
+                  child: Text(
+                    'Passer',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: context.textSecondary,
+                        ),
                   ),
                 ),
               ),
             ),
-            // Page view
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -102,7 +107,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 },
               ),
             ),
-            // Indicators
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -110,45 +114,24 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 (index) => _buildIndicator(index == _currentPage),
               ),
             ),
-            const SizedBox(height: 32),
-            // Next/Get Started button
+            const SizedBox(height: AppSpacing.xl2),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_currentPage < _onboardingItems.length - 1) {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    } else {
-                      _completeOnboarding();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    _currentPage < _onboardingItems.length - 1
-                        ? 'Suivant'
-                        : 'Commencer',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: PrimaryButton(
+                label: isLast ? 'Commencer' : 'Suivant',
+                onPressed: () {
+                  if (!isLast) {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  } else {
+                    _completeOnboarding();
+                  }
+                },
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xl2),
           ],
         ),
       ),
@@ -159,13 +142,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: isActive ? 24 : 8,
-      height: 8,
+      width: isActive ? 22 : 6,
+      height: 6,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primary : AppColors.divider,
-        borderRadius: BorderRadius.circular(4),
+        color: isActive ? context.primary : context.divider,
+        borderRadius: BorderRadius.circular(AppSpacing.borderRadiusPill),
       ),
     );
   }
 }
-

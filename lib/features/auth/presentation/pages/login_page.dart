@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/widgets/app_button.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/constants/app_typography.dart';
+import '../../../../core/extensions/theme_extension.dart';
+import '../../../../shared/widgets/icon_chip.dart';
+import '../../../../shared/widgets/input_field.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../config/routes/app_routes.dart';
-import '../../../../shared/styles/text_styles.dart';
 import '../providers/auth_notifier.dart';
 import '../../../../core/services/location_service.dart';
 import '../../../../core/services/permission_service.dart';
@@ -370,137 +374,94 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _isLoading = authState.isLoading || _isLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.05),
-              AppColors.background,
-              AppColors.background,
-            ],
-            stops: const [0.0, 0.3, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  // Logo
-                  Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary.withOpacity(0.1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.2),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
+      backgroundColor: context.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: AppSpacing.paddingLg,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: AppSpacing.lg),
+                      IconChip(
+                        icon: Icons.local_pharmacy_outlined,
+                        size: 56,
+                        iconSize: 28,
                       ),
-                      child: const Icon(
-                        Icons.local_pharmacy,
-                        size: 50,
-                        color: AppColors.primary,
+                      const SizedBox(height: AppSpacing.xl2),
+                      Text(
+                        'Connexion',
+                        style: AppTypography.screenTitle.copyWith(
+                          color: context.onSurface,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Entrez votre numéro de téléphone pour trouver les pharmacies de garde près de vous.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: context.textSecondary,
+                            ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl3),
+                      InputField(
+                        controller: _phoneController,
+                        label: 'Numéro de téléphone',
+                        hint: '+225 07 12 34 56 78',
+                        keyboardType: TextInputType.phone,
+                        enabled: !_isLoading,
+                        prefixIcon: Icon(
+                          Icons.phone_outlined,
+                          color: context.primary,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Veuillez entrer votre numéro de téléphone';
+                          }
+                          final cleaned =
+                              value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                          if (cleaned.length < 8) {
+                            return 'Numéro de téléphone invalide';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (authState.error != null &&
+                          !authState.needsLocation) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          authState.error!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: context.error),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 32),
-                  // Title
-                  Text(
-                    'Connexion',
-                    style: TextStyles.displaySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Entrez votre numéro de téléphone',
-                    style: TextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 40),
-                  // Phone field
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    enabled: !_isLoading,
-                    style: TextStyles.bodyLarge.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Numéro de téléphone',
-                      labelStyle: TextStyle(
-                        color: AppColors.textSecondary,
-                      ),
-                      hintText: '+225 07 12 34 56 78',
-                      hintStyle: TextStyle(
-                        color: AppColors.textTertiary,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.phone_outlined,
-                        color: AppColors.primary,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: AppColors.border),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.surface,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer votre numéro de téléphone';
-                      }
-                      // Validation basique du numéro
-                      final cleaned = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-                      if (cleaned.length < 8) {
-                        return 'Numéro de téléphone invalide';
-                      }
-                      return null;
-                    },
-                  ),
-                const SizedBox(height: 24),
-                // Submit button
-                AppButton(
-                  text: _isLoading ? 'Connexion...' : 'Se connecter',
-                  onPressed: _isLoading ? null : _handleLogin,
-                  icon: Icons.login_outlined,
                 ),
-                if (authState.error != null && !authState.needsLocation) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    authState.error!,
-                    style: TextStyles.bodySmall.copyWith(color: AppColors.error),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: PrimaryButton(
+                label: _isLoading ? 'Connexion...' : 'Se connecter',
+                icon: Icons.login_outlined,
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _handleLogin,
+              ),
+            ),
+          ],
         ),
       ),
-    )
     );
   }
 }

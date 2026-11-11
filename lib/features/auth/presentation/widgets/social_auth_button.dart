@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/constants/app_typography.dart';
 
 class SocialAuthButton extends StatelessWidget {
   final String text;
@@ -21,24 +21,24 @@ class SocialAuthButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        side: BorderSide(color: color, width: 2),
+        foregroundColor: color,
+        minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
+        side: BorderSide(color: color, width: 1.2),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 12),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: AppSpacing.md),
           Text(
             text,
-            style: TextStyles.button.copyWith(color: color),
+            style: AppTypography.labelLarge.copyWith(color: color),
           ),
         ],
       ),
     );
   }
 }
-

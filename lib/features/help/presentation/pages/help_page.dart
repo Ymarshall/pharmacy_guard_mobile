@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/icon_chip.dart';
+import '../../../../shared/widgets/screen_app_bar.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/surface_card.dart';
 
 class HelpPage extends StatelessWidget {
   const HelpPage({super.key});
@@ -9,16 +13,15 @@ class HelpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Aide'),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'Aide'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.paddingLg,
         children: [
           // Section Comment utiliser
           _buildSectionHeader('Comment utiliser l\'application'),
           _buildHelpCard(
+            context,
             icon: Icons.search_outlined,
             title: 'Rechercher une pharmacie',
             description:
@@ -29,6 +32,7 @@ class HelpPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildHelpCard(
+            context,
             icon: Icons.location_on_outlined,
             title: 'Trouver les pharmacies proches',
             description:
@@ -39,6 +43,7 @@ class HelpPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildHelpCard(
+            context,
             icon: Icons.phone_outlined,
             title: 'Contacter une pharmacie',
             description:
@@ -49,6 +54,7 @@ class HelpPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildHelpCard(
+            context,
             icon: Icons.emergency_outlined,
             title: 'Numéros d\'urgence',
             description:
@@ -62,30 +68,35 @@ class HelpPage extends StatelessWidget {
           // Section FAQ
           _buildSectionHeader('Questions fréquentes'),
           _buildFAQCard(
+            context,
             question: 'Comment fonctionne la géolocalisation ?',
             answer:
                 'L\'application utilise votre position GPS pour trouver les pharmacies les plus proches. Si la géolocalisation n\'est pas disponible, nous utilisons la position enregistrée lors de votre inscription.',
           ),
           const SizedBox(height: 12),
           _buildFAQCard(
+            context,
             question: 'Les pharmacies sont-elles toujours ouvertes ?',
             answer:
                 'Non, les pharmacies de garde sont ouvertes selon un planning spécifique. L\'application affiche le statut de chaque pharmacie (ouverte, fermée, de garde) en temps réel.',
           ),
           const SizedBox(height: 12),
           _buildFAQCard(
+            context,
             question: 'Puis-je utiliser l\'application hors ligne ?',
             answer:
                 'Oui, l\'application sauvegarde automatiquement les données en local. Vous pouvez consulter les pharmacies récemment chargées même sans connexion internet.',
           ),
           const SizedBox(height: 12),
           _buildFAQCard(
+            context,
             question: 'Comment mettre à jour les données ?',
             answer:
                 'Les données sont automatiquement mises à jour lorsque vous êtes connecté à internet. Vous pouvez également forcer une mise à jour depuis les paramètres.',
           ),
           const SizedBox(height: 12),
           _buildFAQCard(
+            context,
             question: 'L\'application est-elle gratuite ?',
             answer:
                 'Oui, l\'application est entièrement gratuite. Aucun frais n\'est facturé pour l\'utilisation du service.',
@@ -95,6 +106,7 @@ class HelpPage extends StatelessWidget {
           // Section Contact
           _buildSectionHeader('Besoin d\'aide ?'),
           _buildContactCard(
+            context,
             icon: Icons.email_outlined,
             title: 'Email',
             subtitle: 'support@pharmaciedegarde.ci',
@@ -104,6 +116,7 @@ class HelpPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildContactCard(
+            context,
             icon: Icons.phone_outlined,
             title: 'Téléphone',
             subtitle: '+225 27 22 44 55 66',
@@ -113,6 +126,7 @@ class HelpPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildContactCard(
+            context,
             icon: Icons.chat_bubble_outline,
             title: 'Chat en direct',
             subtitle: 'Disponible du lundi au vendredi, 8h-18h',
@@ -124,81 +138,62 @@ class HelpPage extends StatelessWidget {
 
           // Section À propos
           _buildSectionHeader('À propos'),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadowLight,
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          SurfaceCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.local_pharmacy,
-                        color: AppColors.primary,
-                        size: 32,
-                      ),
+                    const IconChip(
+                      icon: Icons.local_pharmacy_outlined,
+                      size: 48,
+                      iconSize: 24,
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.lg),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Pharmacie de Garde',
-                            style: TextStyles.titleLarge.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                           Text(
                             'Version 1.0.0',
-                            style: TextStyles.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: context.textTertiary,
+                                ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Notre mission',
-                  style: TextStyles.titleMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Faciliter l\'accès aux soins de santé en vous aidant à trouver rapidement les pharmacies de garde les plus proches, 24h/24 et 7j/7.',
-                  style: TextStyles.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Sources de données',
-                  style: TextStyles.titleMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Les informations sur les pharmacies proviennent de sources officielles et sont mises à jour régulièrement pour garantir leur exactitude.',
-                  style: TextStyles.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -211,200 +206,127 @@ class HelpPage extends StatelessWidget {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(
-        title,
-        style: TextStyles.titleMedium.copyWith(
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-      ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: SectionHeader(title: title),
     );
   }
 
-  Widget _buildHelpCard({
+  Widget _buildHelpCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String description,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return SurfaceCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowLight,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconChip(icon: icon),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.textSecondary,
+                      ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    description,
-                    style: TextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-            ),
-          ],
-        ),
+          ),
+          Icon(Icons.chevron_right, color: context.textTertiary),
+        ],
       ),
     );
   }
 
-  Widget _buildFAQCard({
+  Widget _buildFAQCard(
+    BuildContext context, {
     required String question,
     required String answer,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.help_outline,
-                  color: AppColors.accent,
-                  size: 20,
-                ),
+              IconChip(
+                icon: Icons.help_outline,
+                size: 36,
+                iconSize: 18,
+                backgroundColor: context.secondarySurface,
+                iconColor: context.secondary,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
                   question,
-                  style: TextStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: Text(
-              answer,
-              style: TextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            answer,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: context.textSecondary,
+                ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContactCard({
+  Widget _buildContactCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return SurfaceCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowLight,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+      child: Row(
+        children: [
+          IconChip(icon: icon),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.textSecondary,
+                      ),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-            ),
-          ],
-        ),
+          ),
+          Icon(Icons.chevron_right, color: context.textTertiary),
+        ],
       ),
     );
   }

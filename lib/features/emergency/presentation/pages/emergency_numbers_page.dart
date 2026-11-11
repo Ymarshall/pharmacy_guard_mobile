@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/error_widget.dart';
+import '../../../../shared/widgets/icon_chip.dart';
+import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../shared/widgets/screen_app_bar.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/status_badge.dart';
+import '../../../../shared/widgets/surface_card.dart';
 import '../../../../core/utils/icon_utils.dart';
 import '../../domain/entities/emergency_number.dart';
 import '../providers/emergency_notifier.dart';
@@ -30,85 +39,34 @@ class _EmergencyNumbersPageState extends ConsumerState<EmergencyNumbersPage> {
     final emergencyState = ref.watch(emergencyNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Numéros d\'Urgence'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.error,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'Numéros d\'urgence'),
       body: _buildBody(emergencyState),
     );
   }
 
   Widget _buildBody(EmergencyState state) {
     if (state.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.error,
-        ),
-      );
+      return const LoadingWidget(message: 'Chargement des numéros...');
     }
 
     if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              state.error!,
-              style: TextStyles.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(emergencyNotifierProvider.notifier).getEmergencyNumbers();
-              },
-              child: const Text('Réessayer'),
-            ),
-            if (state.error!.contains('cache') || state.error!.contains('connexion'))
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Mode hors ligne : Affichage des dernières données mises en cache',
-                  style: TextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-          ],
-        ),
+      return AppErrorWidget(
+        title: 'Numéros indisponibles',
+        message: state.error!,
+        onRetry: () {
+          ref.read(emergencyNotifierProvider.notifier).getEmergencyNumbers();
+        },
       );
     }
 
     final emergencyNumbers = state.emergencyNumbers;
 
     if (emergencyNumbers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.emergency_outlined,
-              size: 64,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Aucun numéro d\'urgence disponible',
-              style: TextStyles.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      return const EmptyState(
+        icon: Icons.emergency_outlined,
+        title: 'Aucun numéro',
+        message: 'Aucun numéro d\'urgence disponible',
       );
     }
 
@@ -134,65 +92,32 @@ class _EmergencyNumbersPageState extends ConsumerState<EmergencyNumbersPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.sm,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.emergency,
-                    size: 50,
-                    color: Colors.white,
-                  ),
+                IconChip(
+                  icon: Icons.emergency_outlined,
+                  backgroundColor: context.errorSurface,
+                  iconColor: context.error,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Numéros d\'Urgence',
-                  style: TextStyles.displaySmall.copyWith(
-                    color: AppColors.error,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Composez ces numéros en cas d\'urgence',
-                  style: TextStyles.bodyMedium,
-                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: context.textSecondary,
+                      ),
                 ),
-                if (state.isFromCache)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.cloud_off, size: 16, color: AppColors.warning),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Mode hors ligne',
-                            style: TextStyles.bodySmall.copyWith(
-                              color: AppColors.warning,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                if (state.isFromCache) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  StatusBadge.warning('Mode hors ligne'),
+                ],
               ],
             ),
           ),
@@ -261,14 +186,15 @@ class _EmergencyNumbersPageState extends ConsumerState<EmergencyNumbersPage> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyles.titleLarge.copyWith(
-                  color: color,
-                ),
+              IconChip(
+                icon: icon,
+                size: 36,
+                iconSize: 18,
+                backgroundColor: color.withValues(alpha: 0.12),
+                iconColor: color,
               ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(child: SectionHeader(title: title)),
             ],
           ),
           const SizedBox(height: 12),
@@ -281,17 +207,9 @@ class _EmergencyNumbersPageState extends ConsumerState<EmergencyNumbersPage> {
   Widget _buildEmergencyCard(BuildContext context, EmergencyNumber number) {
     final iconColor = IconUtils.hexToColor(number.color);
     
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: AppColors.border,
-          width: 1,
-        ),
-      ),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: SurfaceCard(
         onTap: () async {
           final uri = Uri.parse('tel:${number.number}');
           if (await canLaunchUrl(uri)) {
@@ -302,86 +220,45 @@ class _EmergencyNumbersPageState extends ConsumerState<EmergencyNumbersPage> {
             }
           }
         },
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+        child: Row(
             children: [
-              // Icon
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Icon(
-                    IconUtils.getIcon(number.icon),
-                    color: iconColor,
-                    size: 24,
-                  ),
-                ),
+              IconChip(
+                icon: IconUtils.getIcon(number.icon),
+                backgroundColor: iconColor.withValues(alpha: 0.12),
+                iconColor: iconColor,
               ),
-              const SizedBox(width: 16),
-              // Info
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       number.name,
-                      style: TextStyles.titleMedium,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       number.description,
-                      style: TextStyles.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.phone,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          number.number,
-                          style: TextStyles.bodyLarge.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: context.textTertiary,
                           ),
-                        ),
-                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      number.number,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: context.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ],
                 ),
               ),
-              // Call button
-              IconButton(
-                onPressed: () async {
-                  final uri = Uri.parse('tel:${number.number}');
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.platformDefault);
-                  } else {
-                    if (context.mounted) {
-                      context.showSnackBar('Impossible d\'ouvrir le composeur téléphonique');
-                    }
-                  }
-                },
-                icon: const Icon(
-                  Icons.phone,
-                  color: AppColors.primary,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                ),
-              ),
+              Icon(Icons.chevron_right, color: context.textTertiary),
             ],
           ),
-        ),
       ),
     );
   }

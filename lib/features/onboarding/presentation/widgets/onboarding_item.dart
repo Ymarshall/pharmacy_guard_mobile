@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 
 class OnboardingItem extends StatelessWidget {
   final OnboardingItemData data;
@@ -13,41 +13,40 @@ class OnboardingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(32.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl2),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
           Container(
-            width: 120,
-            height: 120,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
-              color: data.color.withOpacity(0.1),
-              shape: BoxShape.circle,
+              color: data.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
             ),
             child: Icon(
               data.icon,
-              size: 64,
+              size: 34,
               color: data.color,
             ),
           ),
-          const SizedBox(height: 48),
-          // Title
+          const SizedBox(height: AppSpacing.xl3),
           Text(
             data.title,
-            style: TextStyles.displaySmall.copyWith(
-              color: data.color,
-            ),
-            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: context.onSurface,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                ),
           ),
-          const SizedBox(height: 24),
-          // Description
+          const SizedBox(height: AppSpacing.md),
           Text(
             data.description,
-            style: TextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: context.textSecondary,
+                  height: 1.55,
+                ),
           ),
         ],
       ),
@@ -68,4 +67,3 @@ class OnboardingItemData {
     required this.color,
   });
 }
-

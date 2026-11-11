@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_decorations.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/styles/text_styles.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../domain/entities/review.dart';
 
 class ReviewItemWidget extends StatelessWidget {
@@ -20,28 +24,27 @@ class ReviewItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isUserReview ? AppColors.primary.withOpacity(0.3) : AppColors.border,
-          width: isUserReview ? 2 : 1,
-        ),
-      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: AppSpacing.paddingLg,
+      decoration: isUserReview
+          ? AppDecorations.selectedCard(context, context.primary)
+          : AppDecorations.cardDecoration(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               // Avatar
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: context.primarySurface,
+                  borderRadius: BorderRadius.circular(AppSpacing.borderRadiusSm),
+                ),
                 child: Icon(
-                  Icons.person,
-                  color: AppColors.primary,
+                  Icons.person_outline,
+                  color: context.primary,
                   size: 20,
                 ),
               ),
@@ -61,19 +64,9 @@ class ReviewItemWidget extends StatelessWidget {
                           ),
                         ),
                         if (isUserReview)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Votre avis',
-                              style: TextStyles.bodySmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                          const StatusBadge(
+                            label: 'Votre avis',
+                            variant: StatusBadgeVariant.success,
                           ),
                       ],
                     ),

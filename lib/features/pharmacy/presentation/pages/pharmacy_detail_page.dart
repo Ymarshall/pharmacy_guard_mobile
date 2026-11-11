@@ -2,9 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_decorations.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../shared/widgets/icon_chip.dart';
+import '../../../../shared/widgets/screen_app_bar.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../../../core/utils/distance_utils.dart';
 import '../../domain/entities/pharmacy.dart';
 import '../../domain/entities/insurance.dart';
@@ -57,10 +63,8 @@ class PharmacyDetailPage extends ConsumerWidget {
     final clientId = authState.authResponse?.client.id ?? 0;
     
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Détails de la pharmacie'),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'Détails de la pharmacie'),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,10 +103,10 @@ class PharmacyDetailPage extends ConsumerWidget {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primarySurface,
             child: const Icon(
-              Icons.local_pharmacy,
-              size: 80,
+              Icons.local_pharmacy_outlined,
+              size: 64,
               color: AppColors.primary,
             ),
           );
@@ -120,50 +124,62 @@ class PharmacyDetailPage extends ConsumerWidget {
   }
 
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.local_pharmacy,
-            size: 64,
-            color: AppColors.primary,
+    return Builder(
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.sm,
           ),
-          const SizedBox(height: 16),
-          Text(
-            pharmacy.name,
-            style: TextStyles.displaySmall,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          _buildStatusBadge(),
-          if (pharmacy.averageRating != null) ...[
-            const SizedBox(height: 12),
-            _buildRatingDisplay(pharmacy.averageRating!),
-          ],
-          if (pharmacy.description != null && pharmacy.description!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              pharmacy.description!,
-              style: TextStyles.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
-          if (pharmacy.pharmacistName != null && pharmacy.pharmacistName!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Pharmacien: ${pharmacy.pharmacistName}',
-              style: TextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const IconChip(
+                icon: Icons.local_pharmacy_outlined,
+                size: 56,
+                iconSize: 28,
               ),
-            ),
-          ],
-        ],
-      ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                pharmacy.name,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: context.onSurface,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildStatusBadge(),
+              if (pharmacy.averageRating != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                _buildRatingDisplay(pharmacy.averageRating!),
+              ],
+              if (pharmacy.description != null &&
+                  pharmacy.description!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  pharmacy.description!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: context.textSecondary,
+                      ),
+                ),
+              ],
+              if (pharmacy.pharmacistName != null &&
+                  pharmacy.pharmacistName!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Pharmacien : ${pharmacy.pharmacistName}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.textTertiary,
+                      ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -182,19 +198,10 @@ class PharmacyDetailPage extends ConsumerWidget {
       badgeText = 'Fermée';
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        badgeText,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    return StatusBadge(
+      label: badgeText,
+      color: badgeColor.withValues(alpha: 0.12),
+      textColor: badgeColor,
     );
   }
 
@@ -205,7 +212,6 @@ class PharmacyDetailPage extends ConsumerWidget {
     final hasHalfStar = (clampedRating - fullStars) >= 0.5;
     
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Étoiles pleines
         ...List.generate(fullStars, (index) => Icon(
@@ -229,17 +235,15 @@ class PharmacyDetailPage extends ConsumerWidget {
         const SizedBox(width: 8),
         Text(
           rating.toStringAsFixed(1),
-          style: TextStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
           ),
         ),
         const SizedBox(width: 4),
-        Text(
+        const Text(
           '/ 5.0',
-          style: TextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 13),
         ),
       ],
     );
@@ -309,57 +313,67 @@ class PharmacyDetailPage extends ConsumerWidget {
   }
 
   Widget _buildDistanceInfo(double distance) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Distance et temps de trajet',
-            style: TextStyles.titleMedium.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
+    return Builder(
+      builder: (context) {
+        return Container(
+          padding: AppSpacing.paddingLg,
+          decoration: AppDecorations.cardDecoration(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.straighten, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
               Text(
-                DistanceUtils.formatDistance(distance),
-                style: TextStyles.bodyLarge,
+                'Distance et temps de trajet',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Icon(Icons.straighten, color: context.primary, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    DistanceUtils.formatDistance(distance),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: context.onSurface,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Icon(
+                    Icons.directions_walk_outlined,
+                    color: context.textSecondary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    '${DistanceUtils.formatWalkingTime(distance)} à pied',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Icon(
+                    Icons.directions_car_outlined,
+                    color: context.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    '${DistanceUtils.formatDrivingTime(distance)} en voiture',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.directions_walk_outlined, color: AppColors.textSecondary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                '${DistanceUtils.formatWalkingTime(distance)} à pied',
-                style: TextStyles.bodyMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.directions_car_outlined, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                '${DistanceUtils.formatDrivingTime(distance)} en voiture',
-                style: TextStyles.bodyMedium,
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -369,27 +383,17 @@ class PharmacyDetailPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.access_time, color: AppColors.primary, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Horaires',
-                style: TextStyles.titleLarge,
+          const SectionHeader(title: 'Horaires'),
+          const SizedBox(height: AppSpacing.md),
+          Builder(
+            builder: (context) => Container(
+              width: double.infinity,
+              padding: AppSpacing.paddingLg,
+              decoration: AppDecorations.cardDecoration(context),
+              child: Text(
+                pharmacy.horaires!,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Text(
-              pharmacy.horaires!,
-              style: TextStyles.bodyMedium,
             ),
           ),
         ],
@@ -403,28 +407,16 @@ class PharmacyDetailPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.verified_user, color: AppColors.primary, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Assurances autorisées',
-                style: TextStyles.titleLarge,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          const SectionHeader(title: 'Assurances autorisées'),
+          const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: pharmacy.assurances.map((insurance) {
               return Chip(
-                label: Text(
-                  insurance.name,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                backgroundColor: AppColors.primary.withOpacity(0.1),
-                side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                label: Text(insurance.name),
+                backgroundColor: AppColors.primarySurface,
+                side: BorderSide.none,
               );
             }).toList(),
           ),
@@ -456,16 +448,19 @@ class PharmacyDetailPage extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyles.labelLarge.copyWith(
-                      color: AppColors.textSecondary,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     value,
-                    style: TextStyles.bodyLarge.copyWith(
-                      color: isClickable ? AppColors.primary : AppColors.textPrimary,
-                      decoration: isClickable ? TextDecoration.underline : null,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isClickable ? AppColors.primary : null,
+                      decoration:
+                          isClickable ? TextDecoration.underline : null,
                     ),
                   ),
                 ],
@@ -502,10 +497,6 @@ class PharmacyDetailPage extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
               ),
             ),
           ),
@@ -571,12 +562,8 @@ class PharmacyDetailPage extends ConsumerWidget {
               icon: const Icon(Icons.directions),
               label: const Text('Itinéraire'),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.accent, width: 1.5),
-                foregroundColor: AppColors.accent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                side: const BorderSide(color: AppColors.primary, width: 1.2),
+                foregroundColor: AppColors.primary,
               ),
             ),
           ),
@@ -590,12 +577,8 @@ class PharmacyDetailPage extends ConsumerWidget {
                 icon: const Icon(Icons.report_problem_outlined),
                 label: const Text('Signaler une erreur de garde'),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                  side: const BorderSide(color: AppColors.error, width: 1.2),
                   foregroundColor: AppColors.error,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
                 ),
               ),
             ),
@@ -685,9 +668,10 @@ class PharmacyDetailPage extends ConsumerWidget {
                       color: AppColors.primary,
                     ),
                     const SizedBox(height: 24),
-                    Text(
+                    const Text(
                       'Envoi du signalement...',
-                      style: TextStyles.bodyLarge.copyWith(
+                      style: TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,

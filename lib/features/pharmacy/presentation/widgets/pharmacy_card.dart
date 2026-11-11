@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
+import '../../../../shared/widgets/status_badge.dart';
+import '../../../../shared/widgets/surface_card.dart';
 import '../../domain/entities/pharmacy.dart';
 import '../../../../core/utils/distance_utils.dart';
 
@@ -26,7 +29,6 @@ class PharmacyCard extends StatefulWidget {
 
 class _PharmacyCardState extends State<PharmacyCard>
     with SingleTickerProviderStateMixin {
-  bool _isPressed = false;
   late AnimationController _pulseController;
 
   @override
@@ -51,180 +53,84 @@ class _PharmacyCardState extends State<PharmacyCard>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap?.call();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.98 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadowMedium,
-                blurRadius: 14,
-                offset: const Offset(0, 2),
-                spreadRadius: 0,
+    return SurfaceCard(
+          margin: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onTap,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.pharmacy.name,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.onSurface,
+                            height: 1.25,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getAddress(),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: context.textSecondary,
+                            height: 1.25,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildStatusBadge(),
+                        if (widget.pharmacy.distance != null) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildDistanceLine(
+                              context,
+                              widget.pharmacy.distance!,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _roundAction(
+                      icon: Icons.phone_outlined,
+                      label: 'Appeler',
+                      background: context.primarySurface,
+                      foreground: context.primary,
+                      onPressed: _callPharmacy,
+                    ),
+                    _roundAction(
+                      icon: Icons.directions_outlined,
+                      label: 'Itinéraire',
+                      background: context.surfaceSubtle,
+                      foreground: context.primary,
+                      onPressed: _openDirections,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.pharmacy.name,
-                        style: TextStyles.titleLarge.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatusBadge(),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 18,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _getAddress(),
-                        style: TextStyles.bodyMedium,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Travel time and status
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _buildStatusChip(),
-                    if (widget.pharmacy.distance != null) ...[
-                      _buildTimeChip(
-                        icon: Icons.directions_car_outlined,
-                        text: DistanceUtils.formatDrivingTime(widget.pharmacy.distance!),
-                        color: AppColors.primary,
-                      ),
-                      _buildTimeChip(
-                        icon: Icons.directions_walk_outlined,
-                        text: DistanceUtils.formatWalkingTime(widget.pharmacy.distance!),
-                        color: AppColors.textSecondary,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionButton(
-                        icon: Icons.phone_outlined,
-                        label: 'Appeler',
-                        isPrimary: true,
-                        onPressed: () async {
-                          final uri = Uri.parse('tel:${widget.pharmacy.phone1}');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri, mode: LaunchMode.platformDefault);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildActionButton(
-                        icon: Icons.directions_outlined,
-                        label: 'Itinéraire',
-                        isPrimary: false,
-                        onPressed: () async {
-                          // Utiliser la position de l'utilisateur si disponible, sinon juste afficher la pharmacie
-                          if (widget.userLatitude != null && widget.userLongitude != null) {
-                            // Tracer l'itinéraire depuis la position de l'utilisateur vers la pharmacie
-                            // Utiliser l'URL web qui fonctionne sur tous les appareils et émulateurs
-                            final uri = Uri.parse(
-                              'https://www.google.com/maps/dir/?api=1&origin=${widget.userLatitude},${widget.userLongitude}&destination=${widget.pharmacy.latitude},${widget.pharmacy.longitude}&travelmode=driving',
-                            );
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            } else {
-                              // Fallback : essayer avec le schéma Android si l'URL web ne fonctionne pas
-                              if (Platform.isAndroid) {
-                                try {
-                                  final androidUri = Uri.parse(
-                                    'google.navigation:q=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
-                                  );
-                                  if (await canLaunchUrl(androidUri)) {
-                                    await launchUrl(androidUri, mode: LaunchMode.externalApplication);
-                                  }
-                                } catch (e) {
-                                  // Si ça échoue aussi, utiliser geo: comme dernier recours
-                                  final geoUri = Uri.parse(
-                                    'geo:${widget.pharmacy.latitude},${widget.pharmacy.longitude}?q=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
-                                  );
-                                  if (await canLaunchUrl(geoUri)) {
-                                    await launchUrl(geoUri, mode: LaunchMode.externalApplication);
-                                  }
-                                }
-                              }
-                            }
-                          } else {
-                            // Si pas de position utilisateur, juste afficher la pharmacie
-                            final uri = Uri.parse(
-                              'https://www.google.com/maps/search/?api=1&query=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
-                            );
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            } else {
-                              // Fallback pour Android
-                              if (Platform.isAndroid) {
-                                try {
-                                  final geoUri = Uri.parse(
-                                    'geo:${widget.pharmacy.latitude},${widget.pharmacy.longitude}?q=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
-                                  );
-                                  if (await canLaunchUrl(geoUri)) {
-                                    await launchUrl(geoUri, mode: LaunchMode.externalApplication);
-                                  }
-                                } catch (e) {
-                                  // Ignorer l'erreur
-                                }
-                              }
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -247,27 +153,11 @@ class _PharmacyCardState extends State<PharmacyCard>
       badgeIcon = Icons.cancel_outlined;
     }
 
-    Widget badge = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(badgeIcon, size: 14, color: badgeColor),
-          const SizedBox(width: 6),
-          Text(
-            badgeText,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: badgeColor,
-            ),
-          ),
-        ],
-      ),
+    final Widget badge = StatusBadge(
+      label: badgeText,
+      icon: badgeIcon,
+      color: badgeColor.withValues(alpha: 0.12),
+      textColor: badgeColor,
     );
 
     // Animation pulsante pour les pharmacies ouvertes
@@ -287,78 +177,121 @@ class _PharmacyCardState extends State<PharmacyCard>
     return badge;
   }
 
-  Widget _buildStatusChip() {
-    Color chipColor;
-    String chipText;
-    IconData chipIcon;
+  Widget _buildDistanceLine(BuildContext context, double distance) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: context.textTertiary,
+          fontSize: 12,
+          height: 1.2,
+        );
+    return Row(
+      children: [
+        Icon(
+          Icons.directions_car_outlined,
+          size: 14,
+          color: context.textTertiary,
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '${_formatKm(distance)} · ${DistanceUtils.formatDrivingTime(distance)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(
+          Icons.directions_walk_outlined,
+          size: 14,
+          color: context.textTertiary,
+        ),
+        const SizedBox(width: 4),
+        Text(DistanceUtils.formatWalkingTime(distance), style: style),
+      ],
+    );
+  }
 
-    if (widget.pharmacy.isOnDuty) {
-      chipColor = AppColors.pharmacyOnDuty;
-      chipText = 'De garde';
-      chipIcon = Icons.local_pharmacy_outlined;
-    } else if (widget.pharmacy.isOpen) {
-      chipColor = AppColors.pharmacyOpen;
-      chipText = 'Ouverte';
-      chipIcon = Icons.check_circle_outline;
-    } else {
-      chipColor = AppColors.pharmacyClosed;
-      chipText = 'Fermée';
-      chipIcon = Icons.cancel_outlined;
+  String _formatKm(double distanceInKm) {
+    if (distanceInKm < 1) {
+      return '${(distanceInKm * 1000).round()} m';
     }
+    final value = distanceInKm.toStringAsFixed(1).replaceAll('.', ',');
+    return '$value km';
+  }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            chipIcon,
-            size: 14,
-            color: chipColor,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            chipText,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: chipColor,
-            ),
-          ),
-        ],
+  Widget _roundAction({
+    required IconData icon,
+    required String label,
+    required Color background,
+    required Color foreground,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: label,
+      icon: Icon(icon, size: 20),
+      style: IconButton.styleFrom(
+        backgroundColor: background,
+        foregroundColor: foreground,
+        minimumSize: const Size(44, 44),
+        fixedSize: const Size(44, 44),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: const CircleBorder(),
       ),
     );
   }
 
-  Widget _buildTimeChip({
-    required IconData icon,
-    required String text,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _callPharmacy() async {
+    final uri = Uri.parse('tel:${widget.pharmacy.phone1}');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
+  }
+
+  Future<void> _openDirections() async {
+    if (widget.userLatitude != null && widget.userLongitude != null) {
+      final uri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&origin=${widget.userLatitude},${widget.userLongitude}&destination=${widget.pharmacy.latitude},${widget.pharmacy.longitude}&travelmode=driving',
+      );
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else if (Platform.isAndroid) {
+        try {
+          final androidUri = Uri.parse(
+            'google.navigation:q=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
+          );
+          if (await canLaunchUrl(androidUri)) {
+            await launchUrl(androidUri, mode: LaunchMode.externalApplication);
+          }
+        } catch (e) {
+          final geoUri = Uri.parse(
+            'geo:${widget.pharmacy.latitude},${widget.pharmacy.longitude}?q=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
+          );
+          if (await canLaunchUrl(geoUri)) {
+            await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+          }
+        }
+      }
+    } else {
+      final uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
+      );
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else if (Platform.isAndroid) {
+        try {
+          final geoUri = Uri.parse(
+            'geo:${widget.pharmacy.latitude},${widget.pharmacy.longitude}?q=${widget.pharmacy.latitude},${widget.pharmacy.longitude}',
+          );
+          if (await canLaunchUrl(geoUri)) {
+            await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+          }
+        } catch (e) {
+          // Ignorer l'erreur
+        }
+      }
+    }
   }
 
   String _getAddress() {
@@ -373,45 +306,5 @@ class _PharmacyCardState extends State<PharmacyCard>
       parts.add(widget.pharmacy.district!);
     }
     return parts.isNotEmpty ? parts.join(', ') : 'Adresse non disponible';
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required bool isPrimary,
-    required VoidCallback onPressed,
-  }) {
-    if (isPrimary) {
-      return ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textLight,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      );
-    } else {
-      return OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18, color: AppColors.accent),
-        label: Text(
-          label,
-          style: const TextStyle(color: AppColors.accent),
-        ),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.accent, width: 1.5),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      );
-    }
   }
 }

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../widgets/rating_summary_widget.dart';
 import '../widgets/review_item_widget.dart';
 import '../widgets/review_dialog.dart';
@@ -82,7 +86,7 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
         ),
         title: const Text('Supprimer l\'avis'),
         content: const Text('Êtes-vous sûr de vouloir supprimer votre avis ?'),
@@ -94,7 +98,7 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+              backgroundColor: context.error,
               foregroundColor: Colors.white,
             ),
             child: const Text('Supprimer'),
@@ -125,17 +129,11 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // En-tête de section
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Icon(Icons.rate_review, color: AppColors.primary, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Avis et commentaires',
-                style: TextStyles.titleLarge,
-              ),
-            ],
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+          child: SectionHeader(
+            eyebrow: 'Communauté',
+            title: 'Avis et commentaires',
           ),
         ),
         const SizedBox(height: 8),
@@ -153,20 +151,10 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: reviewState.isLoading
-                    ? null
-                    : () => _showReviewDialog(),
-                icon: const Icon(Icons.add_comment),
-                label: const Text('Donner votre avis'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+              child: PrimaryButton(
+                label: 'Donner votre avis',
+                icon: Icons.add_comment_outlined,
+                onPressed: reviewState.isLoading ? null : () => _showReviewDialog(),
               ),
             ),
           ),
@@ -175,33 +163,12 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
         if (reviewState.isLoading && reviewState.reviews.isEmpty)
           const Padding(
             padding: EdgeInsets.all(32),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            ),
+            child: LoadingWidget(),
           )
         else if (reviewState.reviews.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(32),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.comment_outlined,
-                    size: 64,
-                    color: AppColors.textSecondary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Aucun commentaire pour le moment',
-                    style: TextStyles.bodyLarge.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const EmptyState(
+            icon: Icons.comment_outlined,
+            message: 'Aucun commentaire pour le moment',
           )
         else
           Padding(
@@ -230,9 +197,9 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: reviewState.isLoadingMore
-                        ? const Center(
+                        ? Center(
                             child: CircularProgressIndicator(
-                              color: AppColors.primary,
+                              color: context.primary,
                             ),
                           )
                         : TextButton(
@@ -258,20 +225,19 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.error),
+                color: context.errorSurface,
+                borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                  Icon(Icons.error_outline, color: context.error, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       reviewState.error!,
-                      style: TextStyles.bodySmall.copyWith(
-                        color: AppColors.error,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: context.error,
+                          ),
                     ),
                   ),
                 ],

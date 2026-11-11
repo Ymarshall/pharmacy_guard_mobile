@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/extensions/theme_extension.dart';
 
 class EmergencyButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -11,31 +11,17 @@ class EmergencyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
+    return FloatingActionButton(
       onPressed: onPressed,
-      backgroundColor: AppColors.surface,
-      foregroundColor: AppColors.accent,
-      elevation: 4,
-      icon: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(
-          Icons.phone_in_talk_outlined,
-          color: Colors.white,
-          size: 18,
-        ),
+      tooltip: 'Numéros utiles',
+      elevation: 2,
+      highlightElevation: 2,
+      backgroundColor: context.surface,
+      foregroundColor: context.error,
+      shape: CircleBorder(
+        side: BorderSide(color: context.cardBorder),
       ),
-      label: const Text(
-        'Numéros utiles',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
+      child: const Icon(Icons.phone_in_talk_outlined),
     );
   }
 }
