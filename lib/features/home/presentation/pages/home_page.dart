@@ -305,7 +305,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Padding(
-        padding: const EdgeInsets.only(bottom: 80),
+        padding: const EdgeInsets.only(bottom: 96),
         child: Column(
         children: [
           Container(

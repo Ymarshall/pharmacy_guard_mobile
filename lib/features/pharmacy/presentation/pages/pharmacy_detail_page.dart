@@ -147,6 +147,7 @@ class PharmacyDetailPage extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: context.onSurface,
                       fontWeight: FontWeight.w800,
+                      height: 1.2,
                     ),
               ),
               const SizedBox(height: AppSpacing.sm),

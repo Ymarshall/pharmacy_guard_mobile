@@ -60,67 +60,74 @@ class _PharmacyCardState extends State<PharmacyCard>
             AppSpacing.lg,
             AppSpacing.sm,
           ),
-          padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: widget.onTap,
-                  child: Column(
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onTap,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.pharmacy.name,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: context.onSurface,
-                                  height: 1.2,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    Text(
+                      widget.pharmacy.name,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.onSurface,
+                            height: 1.25,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildStatusBadge(),
-                      ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       _getAddress(),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: context.textSecondary,
                             height: 1.25,
                           ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (widget.pharmacy.distance != null) ...[
-                      const SizedBox(height: 2),
-                      _buildDistanceLine(context, widget.pharmacy.distance!),
-                    ],
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildStatusBadge(),
+                        if (widget.pharmacy.distance != null) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildDistanceLine(
+                              context,
+                              widget.pharmacy.distance!,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _roundAction(
+                      icon: Icons.phone_outlined,
+                      label: 'Appeler',
+                      background: context.primarySurface,
+                      foreground: context.primary,
+                      onPressed: _callPharmacy,
+                    ),
+                    _roundAction(
+                      icon: Icons.directions_outlined,
+                      label: 'Itinéraire',
+                      background: context.surfaceSubtle,
+                      foreground: context.primary,
+                      onPressed: _openDirections,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 4),
-              _roundAction(
-                icon: Icons.phone_outlined,
-                label: 'Appeler',
-                background: context.primarySurface,
-                foreground: context.primary,
-                onPressed: _callPharmacy,
-              ),
-              _roundAction(
-                icon: Icons.directions_outlined,
-                label: 'Itinéraire',
-                background: context.surfaceSubtle,
-                foreground: context.primary,
-                onPressed: _openDirections,
               ),
             ],
           ),

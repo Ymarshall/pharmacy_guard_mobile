@@ -33,7 +33,7 @@ const screenshotPharmacies = <PharmacyModel>[
   ),
   PharmacyModel(
     id: '2',
-    name: 'NVLLE PHARMACIE DE LA RIVIERA',
+    name: 'NVLLE PHARMACIE SAINTE MARIE DE LA RIVIERA PALMERAIE',
     phone1: '+225 07 59 33 18 42',
     phone2: '+225 07 59 33 18 43',
     email: 'riviera@pharmacie.ci',

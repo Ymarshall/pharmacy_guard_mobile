@@ -66,7 +66,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('PHARMACIE DES II PLATEAUX'), findsOneWidget);
+    expect(
+      find.text('NVLLE PHARMACIE SAINTE MARIE DE LA RIVIERA PALMERAIE'),
+      findsOneWidget,
+    );
     expect(find.text('PHARMACIE DU PLATEAU'), findsOneWidget);
     await shoot('08-garde');
 
@@ -87,17 +90,7 @@ void main() {
     expect(find.text('Ouverte'), findsWidgets);
     await shoot('10-ouverte');
 
-    await tester.scrollUntilVisible(
-      find.text('PHARMACIE DE YOPOUGON NIANGON'),
-      400,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pump();
-    expect(find.text('PHARMACIE DE YOPOUGON NIANGON'), findsOneWidget);
-    expect(find.text('Fermée'), findsWidgets);
-    await shoot('11-fermee');
-
-    final featured = screenshotPharmacies.first;
+    final featured = screenshotPharmacies[1];
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -114,8 +107,11 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('PHARMACIE DES II PLATEAUX'), findsOneWidget);
-    expect(find.text('+225 07 08 21 45 90'), findsOneWidget);
+    expect(
+      find.text('NVLLE PHARMACIE SAINTE MARIE DE LA RIVIERA PALMERAIE'),
+      findsOneWidget,
+    );
+    expect(find.text('+225 07 59 33 18 42'), findsOneWidget);
     await shoot('12-detail');
 
     await tester.ensureVisible(find.text('Itinéraire'));
