@@ -1,6 +1,27 @@
 import 'package:geolocator/geolocator.dart';
 
 class DistanceUtils {
+  /// `null` dès qu'une coordonnée manque : aucune distance n'est affichée.
+  static double? distanceIfPossible(
+    double? startLatitude,
+    double? startLongitude,
+    double? endLatitude,
+    double? endLongitude,
+  ) {
+    if (startLatitude == null ||
+        startLongitude == null ||
+        endLatitude == null ||
+        endLongitude == null) {
+      return null;
+    }
+    return calculateDistance(
+      startLatitude,
+      startLongitude,
+      endLatitude,
+      endLongitude,
+    );
+  }
+
   /// Calcule la distance entre deux points en kilomètres
   static double calculateDistance(
     double startLatitude,
@@ -9,11 +30,12 @@ class DistanceUtils {
     double endLongitude,
   ) {
     return Geolocator.distanceBetween(
-      startLatitude,
-      startLongitude,
-      endLatitude,
-      endLongitude,
-    ) / 1000; // Convert to kilometers
+          startLatitude,
+          startLongitude,
+          endLatitude,
+          endLongitude,
+        ) /
+        1000; // Convert to kilometers
   }
 
   /// Formate la distance en texte lisible

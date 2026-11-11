@@ -9,6 +9,7 @@ import '../../../../shared/widgets/input_field.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../config/routes/app_routes.dart';
+import '../../../../core/providers/providers.dart';
 import '../providers/auth_notifier.dart';
 import '../../../../core/services/location_service.dart';
 import '../../../../core/services/permission_service.dart';
@@ -31,6 +32,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
+  bool _resumePendingAction() {
+    final gate = ref.read(reconnectGateProvider);
+    if (!gate.isWaiting) return false;
+    gate.succeed();
+    if (mounted) Navigator.of(context).maybePop();
+    return true;
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -47,9 +56,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // Le client n'existe pas, on doit demander la géolocalisation via un popup
       _showLocationPermissionDialog(phone);
     } else if (authState.isAuthenticated) {
-      // Connexion réussie
-      if (mounted) {
-        context.navigateToAndRemoveUntil(AppRoutes.home);
+      if (!_resumePendingAction()) {
+        if (mounted) {
+          context.navigateToAndRemoveUntil(AppRoutes.home);
+        }
       }
     } else if (authState.error != null) {
       // Erreur de connexion
@@ -155,44 +165,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     // Afficher un loader pendant l'enregistrement
     if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return PopScope(
-              canPop: false,
-              child: AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Enregistrement en cours...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Création de votre compte',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return PopScope(
+            canPop: false,
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-            );
-          },
-        );
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: AppColors.primary),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Enregistrement en cours...',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Création de votre compte',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
     }
 
     // Obtenir la position et créer le compte
@@ -213,9 +218,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 24),
                     const Text(
                       'Récupération de votre position...',
@@ -251,9 +254,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 24),
                     const Text(
                       'Enregistrement en cours...',
@@ -279,7 +280,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
 
       // Créer le compte avec la position
-      await ref.read(authNotifierProvider.notifier).createClientAndLogin(
+      await ref
+          .read(authNotifierProvider.notifier)
+          .createClientAndLogin(
             phone: phone,
             latitude: position.latitude,
             longitude: position.longitude,
@@ -293,8 +296,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final authState = ref.read(authNotifierProvider);
 
       if (authState.isAuthenticated) {
+        if (_resumePendingAction()) return;
         if (mounted) {
-          // Afficher un message de succès brièvement avant la redirection
           context.showSnackBar('Compte créé avec succès !');
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
@@ -330,19 +333,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         Navigator.pop(context);
       }
-      
+
       String errorMessage = 'Erreur lors de la création de votre compte';
-      
+
       // Messages d'erreur plus explicites
-      if (e.toString().contains('location') || e.toString().contains('position')) {
-        errorMessage = 'Impossible de récupérer votre position.\n\n'
+      if (e.toString().contains('location') ||
+          e.toString().contains('position')) {
+        errorMessage =
+            'Impossible de récupérer votre position.\n\n'
             'Sur le simulateur, vous devez configurer une position :\n'
             '• iOS Simulator : Features > Location > Custom Location...\n'
             '• Android Emulator : Utilisez les contrôles de localisation dans la barre latérale';
       } else {
         errorMessage = 'Erreur : ${e.toString()}';
       }
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -403,8 +408,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       Text(
                         'Entrez votre numéro de téléphone pour trouver les pharmacies de garde près de vous.',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: context.textSecondary,
-                            ),
+                          color: context.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.xl3),
                       InputField(
@@ -421,8 +426,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez entrer votre numéro de téléphone';
                           }
-                          final cleaned =
-                              value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                          final cleaned = value.replaceAll(
+                            RegExp(r'[\s\-\(\)]'),
+                            '',
+                          );
                           if (cleaned.length < 8) {
                             return 'Numéro de téléphone invalide';
                           }
@@ -434,10 +441,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           authState.error!,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: context.error),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: context.error),
                         ),
                       ],
                     ],

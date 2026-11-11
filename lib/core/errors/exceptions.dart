@@ -2,7 +2,7 @@
 abstract class AppException implements Exception {
   final String message;
   const AppException(this.message);
-  
+
   @override
   String toString() => message;
 }
@@ -29,6 +29,22 @@ class NotFoundException extends AppException {
   const NotFoundException(super.message);
 }
 
+class UnauthorizedException extends AppException {
+  const UnauthorizedException(super.message);
+}
+
+class ForbiddenException extends AppException {
+  const ForbiddenException(super.message);
+}
+
+class RateLimitException extends AppException {
+  const RateLimitException(super.message);
+}
+
+class ValidationException extends AppException {
+  const ValidationException(super.message);
+}
+
 /// Permission related exceptions
 class PermissionException extends AppException {
   const PermissionException(super.message);
@@ -38,4 +54,3 @@ class PermissionException extends AppException {
 class LocationException extends AppException {
   const LocationException(super.message);
 }
-

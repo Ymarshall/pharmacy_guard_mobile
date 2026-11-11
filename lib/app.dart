@@ -9,32 +9,42 @@ import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 
-class App extends ConsumerWidget {
+class App extends StatelessWidget {
   final SharedPreferences sharedPreferences;
-  
+
   const App({super.key, required this.sharedPreferences});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return ProviderScope(
       overrides: [
         // Override le provider avec la valeur déjà chargée
         sharedPreferencesInstanceProvider.overrideWithValue(sharedPreferences),
       ],
-      child: MaterialApp(
-        title: 'Pharmacie de Garde',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: AppTheme.getThemeMode(),
-        initialRoute: AppRoutes.splash,
-        routes: {
-          AppRoutes.splash: (context) => const SplashPage(),
-          AppRoutes.onboarding: (context) => const OnboardingPage(),
-          AppRoutes.login: (context) => const LoginPage(),
-          AppRoutes.home: (context) => const HomePage(),
-        },
-      ),
+      child: const _PharmacieApp(),
+    );
+  }
+}
+
+class _PharmacieApp extends ConsumerWidget {
+  const _PharmacieApp();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      navigatorKey: ref.watch(reconnectGateProvider).navigatorKey,
+      title: 'Pharmacie de Garde',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: AppTheme.getThemeMode(),
+      initialRoute: AppRoutes.splash,
+      routes: {
+        AppRoutes.splash: (context) => const SplashPage(),
+        AppRoutes.onboarding: (context) => const OnboardingPage(),
+        AppRoutes.login: (context) => const LoginPage(),
+        AppRoutes.home: (context) => const HomePage(),
+      },
     );
   }
 }

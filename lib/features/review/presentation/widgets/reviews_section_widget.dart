@@ -24,7 +24,8 @@ class ReviewsSectionWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ReviewsSectionWidget> createState() => _ReviewsSectionWidgetState();
+  ConsumerState<ReviewsSectionWidget> createState() =>
+      _ReviewsSectionWidgetState();
 }
 
 class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
@@ -34,7 +35,9 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
     // Charger les commentaires et le rating summary après que le widget soit construit
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final notifier = ref.read(
-        reviewNotifierProvider(ReviewNotifierParams(clientId: widget.clientId)).notifier,
+        reviewNotifierProvider(
+          ReviewNotifierParams(clientId: widget.clientId),
+        ).notifier,
       );
       notifier.loadReviews(pharmacyId: widget.pharmacyId, refresh: true);
       notifier.loadRatingSummary(widget.pharmacyId);
@@ -44,16 +47,19 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
   Future<void> _showReviewDialog({Review? review}) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => ReviewDialog(
-        initialRating: review?.rating,
-        initialComment: review?.comment,
-        isEdit: review != null,
-      ),
+      builder:
+          (context) => ReviewDialog(
+            initialRating: review?.rating,
+            initialComment: review?.comment,
+            isEdit: review != null,
+          ),
     );
 
     if (result != null && mounted) {
       final notifier = ref.read(
-        reviewNotifierProvider(ReviewNotifierParams(clientId: widget.clientId)).notifier,
+        reviewNotifierProvider(
+          ReviewNotifierParams(clientId: widget.clientId),
+        ).notifier,
       );
 
       if (review != null) {
@@ -74,9 +80,21 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
       }
 
       if (mounted) {
-        context.showSnackBar(
-          review != null ? 'Votre avis a été modifié' : 'Votre avis a été publié',
-        );
+        final error =
+            ref
+                .read(
+                  reviewNotifierProvider(
+                    ReviewNotifierParams(clientId: widget.clientId),
+                  ),
+                )
+                .error;
+        if (error == null) {
+          context.showSnackBar(
+            review != null
+                ? 'Votre avis a été modifié'
+                : 'Votre avis a été publié',
+          );
+        }
       }
     }
   }
@@ -84,37 +102,52 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
   Future<void> _confirmDeleteReview(Review review) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
-        ),
-        title: const Text('Supprimer l\'avis'),
-        content: const Text('Êtes-vous sûr de vouloir supprimer votre avis ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.error,
-              foregroundColor: Colors.white,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
             ),
-            child: const Text('Supprimer'),
+            title: const Text('Supprimer l\'avis'),
+            content: const Text(
+              'Êtes-vous sûr de vouloir supprimer votre avis ?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Supprimer'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed == true && mounted) {
       final notifier = ref.read(
-        reviewNotifierProvider(ReviewNotifierParams(clientId: widget.clientId)).notifier,
+        reviewNotifierProvider(
+          ReviewNotifierParams(clientId: widget.clientId),
+        ).notifier,
       );
       await notifier.deleteReview(review.id);
 
       if (mounted) {
-        context.showSnackBar('Votre avis a été supprimé');
+        final error =
+            ref
+                .read(
+                  reviewNotifierProvider(
+                    ReviewNotifierParams(clientId: widget.clientId),
+                  ),
+                )
+                .error;
+        if (error == null) {
+          context.showSnackBar('Votre avis a été supprimé');
+        }
       }
     }
   }
@@ -130,7 +163,10 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
       children: [
         // En-tête de section
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
           child: SectionHeader(
             eyebrow: 'Communauté',
             title: 'Avis et commentaires',
@@ -140,9 +176,7 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
         // Rating summary
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: RatingSummaryWidget(
-            ratingSummary: reviewState.ratingSummary,
-          ),
+          child: RatingSummaryWidget(ratingSummary: reviewState.ratingSummary),
         ),
         const SizedBox(height: 16),
         // Bouton pour ajouter un avis (si l'utilisateur n'en a pas déjà un)
@@ -154,17 +188,15 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
               child: PrimaryButton(
                 label: 'Donner votre avis',
                 icon: Icons.add_comment_outlined,
-                onPressed: reviewState.isLoading ? null : () => _showReviewDialog(),
+                onPressed:
+                    reviewState.isLoading ? null : () => _showReviewDialog(),
               ),
             ),
           ),
         const SizedBox(height: 16),
         // Liste des commentaires
         if (reviewState.isLoading && reviewState.reviews.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(32),
-            child: LoadingWidget(),
-          )
+          const Padding(padding: EdgeInsets.all(32), child: LoadingWidget())
         else if (reviewState.reviews.isEmpty)
           const EmptyState(
             icon: Icons.comment_outlined,
@@ -180,40 +212,43 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
                   ReviewItemWidget(
                     review: reviewState.userReview!,
                     isUserReview: true,
-                    onEdit: () => _showReviewDialog(review: reviewState.userReview),
-                    onDelete: () => _confirmDeleteReview(reviewState.userReview!),
+                    onEdit:
+                        () => _showReviewDialog(review: reviewState.userReview),
+                    onDelete:
+                        () => _confirmDeleteReview(reviewState.userReview!),
                   ),
                 // Afficher les autres commentaires
                 ...reviewState.reviews
                     .where((review) => review.id != reviewState.userReview?.id)
                     .map(
-                      (review) => ReviewItemWidget(
-                        review: review,
-                        isUserReview: false,
-                      ),
+                      (review) =>
+                          ReviewItemWidget(review: review, isUserReview: false),
                     ),
                 // Bouton pour charger plus
                 if (reviewState.hasMore)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: reviewState.isLoadingMore
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              color: context.primary,
+                    child:
+                        reviewState.isLoadingMore
+                            ? Center(
+                              child: CircularProgressIndicator(
+                                color: context.primary,
+                              ),
+                            )
+                            : TextButton(
+                              onPressed: () {
+                                ref
+                                    .read(
+                                      reviewNotifierProvider(
+                                        ReviewNotifierParams(
+                                          clientId: widget.clientId,
+                                        ),
+                                      ).notifier,
+                                    )
+                                    .loadReviews(pharmacyId: widget.pharmacyId);
+                              },
+                              child: const Text('Charger plus de commentaires'),
                             ),
-                          )
-                        : TextButton(
-                            onPressed: () {
-                              ref
-                                  .read(
-                                    reviewNotifierProvider(
-                                      ReviewNotifierParams(clientId: widget.clientId),
-                                    ).notifier,
-                                  )
-                                  .loadReviews(pharmacyId: widget.pharmacyId);
-                            },
-                            child: const Text('Charger plus de commentaires'),
-                          ),
                   ),
               ],
             ),
@@ -235,9 +270,9 @@ class _ReviewsSectionWidgetState extends ConsumerState<ReviewsSectionWidget> {
                   Expanded(
                     child: Text(
                       reviewState.error!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: context.error,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: context.error),
                     ),
                   ),
                 ],

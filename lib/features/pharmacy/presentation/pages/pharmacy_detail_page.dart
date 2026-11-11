@@ -11,6 +11,7 @@ import '../../../../shared/widgets/icon_chip.dart';
 import '../../../../shared/widgets/screen_app_bar.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/distance_utils.dart';
 import '../../domain/entities/pharmacy.dart';
 import '../../domain/entities/insurance.dart';
@@ -45,10 +46,11 @@ class PharmacyDetailPage extends ConsumerWidget {
   }
 
   double? _getCalculatedDistance() {
+    if (!pharmacy.hasGps) return null;
     if (userLatitude != null && userLongitude != null) {
-      return DistanceUtils.calculateDistance(
-        userLatitude!,
-        userLongitude!,
+      return DistanceUtils.distanceIfPossible(
+        userLatitude,
+        userLongitude,
         pharmacy.latitude,
         pharmacy.longitude,
       );
@@ -61,7 +63,7 @@ class PharmacyDetailPage extends ConsumerWidget {
     final calculatedDistance = _getCalculatedDistance();
     final authState = ref.watch(authNotifierProvider);
     final clientId = authState.authResponse?.client.id ?? 0;
-    
+
     return Scaffold(
       backgroundColor: context.background,
       appBar: const ScreenAppBar(title: 'Détails de la pharmacie'),
@@ -70,11 +72,13 @@ class PharmacyDetailPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Photo de la façade
-            if (pharmacy.photo != null && pharmacy.photo!.isNotEmpty) _buildPhotoSection(),
+            if (pharmacy.photo != null && pharmacy.photo!.isNotEmpty)
+              _buildPhotoSection(),
             _buildHeader(),
             _buildInfoSection(calculatedDistance),
             if (pharmacy.assurances.isNotEmpty) _buildInsurancesSection(),
-            if (pharmacy.horaires != null && pharmacy.horaires!.isNotEmpty) _buildHorairesSection(),
+            if (pharmacy.horaires != null && pharmacy.horaires!.isNotEmpty)
+              _buildHorairesSection(),
             _buildActionButtons(context, ref, clientId),
             // Section des commentaires
             if (clientId > 0) ...[
@@ -95,9 +99,7 @@ class PharmacyDetailPage extends ConsumerWidget {
     return Container(
       width: double.infinity,
       height: 250,
-      decoration: BoxDecoration(
-        color: AppColors.background,
-      ),
+      decoration: BoxDecoration(color: AppColors.background),
       child: Image.network(
         pharmacy.photo!,
         fit: BoxFit.cover,
@@ -114,9 +116,7 @@ class PharmacyDetailPage extends ConsumerWidget {
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primary,
-            ),
+            child: CircularProgressIndicator(color: AppColors.primary),
           );
         },
       ),
@@ -144,11 +144,13 @@ class PharmacyDetailPage extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 pharmacy.name,
+                softWrap: true,
+                overflow: TextOverflow.visible,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: context.onSurface,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                    ),
+                  color: context.onSurface,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               _buildStatusBadge(),
@@ -162,8 +164,8 @@ class PharmacyDetailPage extends ConsumerWidget {
                 Text(
                   pharmacy.description!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: context.textSecondary,
-                      ),
+                    color: context.textSecondary,
+                  ),
                 ),
               ],
               if (pharmacy.pharmacistName != null &&
@@ -171,9 +173,9 @@ class PharmacyDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Pharmacien : ${pharmacy.pharmacistName}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: context.textTertiary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: context.textTertiary),
                 ),
               ],
             ],
@@ -210,41 +212,30 @@ class PharmacyDetailPage extends ConsumerWidget {
     final clampedRating = rating.clamp(0.0, 5.0);
     final fullStars = clampedRating.floor();
     final hasHalfStar = (clampedRating - fullStars) >= 0.5;
-    
+
     return Row(
       children: [
         // Étoiles pleines
-        ...List.generate(fullStars, (index) => Icon(
-          Icons.star,
-          color: AppColors.accent,
-          size: 20,
-        )),
+        ...List.generate(
+          fullStars,
+          (index) => Icon(Icons.star, color: AppColors.accent, size: 20),
+        ),
         // Demi-étoile si nécessaire
         if (hasHalfStar)
-          Icon(
-            Icons.star_half,
-            color: AppColors.accent,
-            size: 20,
-          ),
+          Icon(Icons.star_half, color: AppColors.accent, size: 20),
         // Étoiles vides
-        ...List.generate(5 - fullStars - (hasHalfStar ? 1 : 0), (index) => Icon(
-          Icons.star_border,
-          color: AppColors.textTertiary,
-          size: 20,
-        )),
+        ...List.generate(
+          5 - fullStars - (hasHalfStar ? 1 : 0),
+          (index) =>
+              Icon(Icons.star_border, color: AppColors.textTertiary, size: 20),
+        ),
         const SizedBox(width: 8),
         Text(
           rating.toStringAsFixed(1),
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         const SizedBox(width: 4),
-        const Text(
-          '/ 5.0',
-          style: TextStyle(fontSize: 13),
-        ),
+        const Text('/ 5.0', style: TextStyle(fontSize: 13)),
       ],
     );
   }
@@ -303,6 +294,14 @@ class PharmacyDetailPage extends ConsumerWidget {
               },
             ),
           ],
+          if (!pharmacy.hasGps) ...[
+            const SizedBox(height: 16),
+            _buildInfoItem(
+              icon: Icons.location_off_outlined,
+              title: 'Localisation GPS',
+              value: 'Indisponible',
+            ),
+          ],
           if (distance != null) ...[
             const SizedBox(height: 16),
             _buildDistanceInfo(distance),
@@ -323,9 +322,9 @@ class PharmacyDetailPage extends ConsumerWidget {
             children: [
               Text(
                 'Distance et temps de trajet',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
@@ -334,9 +333,9 @@ class PharmacyDetailPage extends ConsumerWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     DistanceUtils.formatDistance(distance),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: context.onSurface,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: context.onSurface),
                   ),
                 ],
               ),
@@ -386,15 +385,16 @@ class PharmacyDetailPage extends ConsumerWidget {
           const SectionHeader(title: 'Horaires'),
           const SizedBox(height: AppSpacing.md),
           Builder(
-            builder: (context) => Container(
-              width: double.infinity,
-              padding: AppSpacing.paddingLg,
-              decoration: AppDecorations.cardDecoration(context),
-              child: Text(
-                pharmacy.horaires!,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
+            builder:
+                (context) => Container(
+                  width: double.infinity,
+                  padding: AppSpacing.paddingLg,
+                  decoration: AppDecorations.cardDecoration(context),
+                  child: Text(
+                    pharmacy.horaires!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
           ),
         ],
       ),
@@ -412,13 +412,14 @@ class PharmacyDetailPage extends ConsumerWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: pharmacy.assurances.map((insurance) {
-              return Chip(
-                label: Text(insurance.name),
-                backgroundColor: AppColors.primarySurface,
-                side: BorderSide.none,
-              );
-            }).toList(),
+            children:
+                pharmacy.assurances.map((insurance) {
+                  return Chip(
+                    label: Text(insurance.name),
+                    backgroundColor: AppColors.primarySurface,
+                    side: BorderSide.none,
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -459,8 +460,7 @@ class PharmacyDetailPage extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 16,
                       color: isClickable ? AppColors.primary : null,
-                      decoration:
-                          isClickable ? TextDecoration.underline : null,
+                      decoration: isClickable ? TextDecoration.underline : null,
                     ),
                   ),
                 ],
@@ -478,7 +478,11 @@ class PharmacyDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref, int clientId) {
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    int clientId,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -504,63 +508,82 @@ class PharmacyDetailPage extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () async {
-                // Utiliser la position de l'utilisateur si disponible, sinon juste afficher la pharmacie
-                if (userLatitude != null && userLongitude != null) {
-                  // Tracer l'itinéraire depuis la position de l'utilisateur vers la pharmacie
-                  // Utiliser l'URL web qui fonctionne sur tous les appareils et émulateurs
-                  final uri = Uri.parse(
-                    'https://www.google.com/maps/dir/?api=1&origin=$userLatitude,$userLongitude&destination=${pharmacy.latitude},${pharmacy.longitude}&travelmode=driving',
-                  );
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    // Fallback : essayer avec le schéma Android si l'URL web ne fonctionne pas
-                    if (Platform.isAndroid) {
-                      try {
-                        final androidUri = Uri.parse(
-                          'google.navigation:q=${pharmacy.latitude},${pharmacy.longitude}',
-                        );
-                        if (await canLaunchUrl(androidUri)) {
-                          await launchUrl(androidUri, mode: LaunchMode.externalApplication);
-                        }
-                      } catch (e) {
-                        // Si ça échoue aussi, utiliser geo: comme dernier recours
-                        final geoUri = Uri.parse(
-                          'geo:${pharmacy.latitude},${pharmacy.longitude}?q=${pharmacy.latitude},${pharmacy.longitude}',
-                        );
-                        if (await canLaunchUrl(geoUri)) {
-                          await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+              onPressed:
+                  pharmacy.hasGps
+                      ? () async {
+                        if (userLatitude != null && userLongitude != null) {
+                          // Tracer l'itinéraire depuis la position de l'utilisateur vers la pharmacie
+                          // Utiliser l'URL web qui fonctionne sur tous les appareils et émulateurs
+                          final uri = Uri.parse(
+                            'https://www.google.com/maps/dir/?api=1&origin=$userLatitude,$userLongitude&destination=${pharmacy.latitude},${pharmacy.longitude}&travelmode=driving',
+                          );
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            // Fallback : essayer avec le schéma Android si l'URL web ne fonctionne pas
+                            if (Platform.isAndroid) {
+                              try {
+                                final androidUri = Uri.parse(
+                                  'google.navigation:q=${pharmacy.latitude},${pharmacy.longitude}',
+                                );
+                                if (await canLaunchUrl(androidUri)) {
+                                  await launchUrl(
+                                    androidUri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              } catch (e) {
+                                // Si ça échoue aussi, utiliser geo: comme dernier recours
+                                final geoUri = Uri.parse(
+                                  'geo:${pharmacy.latitude},${pharmacy.longitude}?q=${pharmacy.latitude},${pharmacy.longitude}',
+                                );
+                                if (await canLaunchUrl(geoUri)) {
+                                  await launchUrl(
+                                    geoUri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              }
+                            }
+                          }
+                        } else {
+                          // Si pas de position utilisateur, juste afficher la pharmacie
+                          final uri = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=${pharmacy.latitude},${pharmacy.longitude}',
+                          );
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            // Fallback pour Android
+                            if (Platform.isAndroid) {
+                              try {
+                                final geoUri = Uri.parse(
+                                  'geo:${pharmacy.latitude},${pharmacy.longitude}?q=${pharmacy.latitude},${pharmacy.longitude}',
+                                );
+                                if (await canLaunchUrl(geoUri)) {
+                                  await launchUrl(
+                                    geoUri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              } catch (e) {
+                                // Ignorer l'erreur
+                              }
+                            }
+                          }
                         }
                       }
-                    }
-                  }
-                } else {
-                  // Si pas de position utilisateur, juste afficher la pharmacie
-                  final uri = Uri.parse(
-                    'https://www.google.com/maps/search/?api=1&query=${pharmacy.latitude},${pharmacy.longitude}',
-                  );
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    // Fallback pour Android
-                    if (Platform.isAndroid) {
-                      try {
-                        final geoUri = Uri.parse(
-                          'geo:${pharmacy.latitude},${pharmacy.longitude}?q=${pharmacy.latitude},${pharmacy.longitude}',
-                        );
-                        if (await canLaunchUrl(geoUri)) {
-                          await launchUrl(geoUri, mode: LaunchMode.externalApplication);
-                        }
-                      } catch (e) {
-                        // Ignorer l'erreur
-                      }
-                    }
-                  }
-                }
-              },
+                      : null,
               icon: const Icon(Icons.directions),
-              label: const Text('Itinéraire'),
+              label: Text(
+                pharmacy.hasGps ? 'Itinéraire' : 'Localisation indisponible',
+              ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.primary, width: 1.2),
                 foregroundColor: AppColors.primary,
@@ -637,9 +660,15 @@ class PharmacyDetailPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _reportDutyIssue(BuildContext context, WidgetRef ref, int clientId) async {
+  Future<void> _reportDutyIssue(
+    BuildContext context,
+    WidgetRef ref,
+    int clientId,
+  ) async {
     try {
-      final reportDataSource = ref.read(providers.pharmacyReportDataSourceProvider);
+      final reportDataSource = ref.read(
+        providers.pharmacyReportDataSourceProvider,
+      );
       final pharmacyId = int.tryParse(pharmacy.id) ?? 0;
 
       if (pharmacyId == 0) {
@@ -664,9 +693,7 @@ class PharmacyDetailPage extends ConsumerWidget {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 24),
                     const Text(
                       'Envoi du signalement...',
@@ -741,6 +768,11 @@ class PharmacyDetailPage extends ConsumerWidget {
         Navigator.pop(context);
       }
 
+      final message =
+          e is AppException
+              ? e.message
+              : 'Erreur lors de l\'envoi du signalement';
+
       // Afficher un message d'erreur
       if (context.mounted) {
         showDialog(
@@ -751,9 +783,7 @@ class PharmacyDetailPage extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               title: const Text('Erreur'),
-              content: Text(
-                'Erreur lors de l\'envoi du signalement: ${e.toString()}',
-              ),
+              content: Text(message),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),

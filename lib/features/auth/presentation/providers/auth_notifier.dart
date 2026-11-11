@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/security/reconnect_gate.dart';
 import '../../domain/entities/auth_response.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../../../core/providers/providers.dart' as providers;
@@ -8,7 +9,8 @@ class AuthState {
   final AuthResponse? authResponse;
   final bool isLoading;
   final String? error;
-  final bool needsLocation; // Indique si on a besoin de la géolocalisation pour créer le compte
+  final bool
+  needsLocation; // Indique si on a besoin de la géolocalisation pour créer le compte
 
   const AuthState({
     this.authResponse,
@@ -37,8 +39,16 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository authRepository;
+  final ReconnectGate reconnectGate;
 
-  AuthNotifier(this.authRepository) : super(const AuthState()) {
+  AuthNotifier(this.authRepository, this.reconnectGate)
+    : super(const AuthState()) {
+    reconnectGate.onResolved = (success) {
+      if (!success) {
+        state = const AuthState();
+        authRepository.signOut();
+      }
+    };
     _checkAuthStatus();
   }
 
@@ -53,24 +63,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> loginWithPhone(String phone) async {
     state = state.copyWith(isLoading: true, error: null, needsLocation: false);
     final result = await authRepository.loginWithPhone(phone);
-    result.fold(
-      (failure) {
-        if (failure is NotFoundFailure) {
-          // Client n'existe pas, on a besoin de la géolocalisation
-          state = state.copyWith(
-            isLoading: false,
-            needsLocation: true,
-            error: failure.message,
-          );
-        } else {
-          state = state.copyWith(
-            isLoading: false,
-            error: failure.message,
-          );
-        }
-      },
-      (authResponse) => state = AuthState(authResponse: authResponse),
-    );
+    result.fold((failure) {
+      if (failure is NotFoundFailure) {
+        // Client n'existe pas, on a besoin de la géolocalisation
+        state = state.copyWith(
+          isLoading: false,
+          needsLocation: true,
+          error: failure.message,
+        );
+      } else {
+        state = state.copyWith(isLoading: false, error: failure.message);
+      }
+    }, (authResponse) => state = AuthState(authResponse: authResponse));
   }
 
   Future<void> createClientAndLogin({
@@ -85,10 +89,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       longitude: longitude,
     );
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (authResponse) => state = AuthState(authResponse: authResponse),
     );
   }
@@ -102,7 +104,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   final repository = ref.watch(providers.authRepositoryProvider);
-  return AuthNotifier(repository);
+  final gate = ref.watch(providers.reconnectGateProvider);
+  return AuthNotifier(repository, gate);
 });

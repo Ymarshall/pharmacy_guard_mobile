@@ -4,95 +4,106 @@ class MockEmergencyNumbers {
   static List<EmergencyNumber> getEmergencyNumbers() {
     return [
       // Medical
-      EmergencyNumber(
-        id: '1',
+      const EmergencyNumber(
+        id: 1,
         name: 'SAMU (Service d\'Aide Médicale Urgente)',
         number: '185',
         description: 'Service d\'urgence médicale 24h/24',
+        color: '#C62828',
         category: EmergencyCategory.medical,
         icon: '🚑',
       ),
-      EmergencyNumber(
-        id: '2',
+      const EmergencyNumber(
+        id: 2,
         name: 'Centre Anti-Poison',
         number: '+225 27 22 44 44 44',
         description: 'Urgences liées aux intoxications',
+        color: '#C62828',
         category: EmergencyCategory.medical,
         icon: '☠️',
       ),
-      EmergencyNumber(
-        id: '3',
+      const EmergencyNumber(
+        id: 3,
         name: 'Croix-Rouge',
         number: '+225 27 22 44 44 44',
         description: 'Assistance médicale et humanitaire',
+        color: '#C62828',
         category: EmergencyCategory.medical,
         icon: '➕',
       ),
       // Fire
-      EmergencyNumber(
-        id: '4',
+      const EmergencyNumber(
+        id: 4,
         name: 'Pompiers',
         number: '180',
         description: 'Service de secours et d\'incendie',
+        color: '#E65100',
         category: EmergencyCategory.fire,
         icon: '🚒',
       ),
       // Police
-      EmergencyNumber(
-        id: '5',
+      const EmergencyNumber(
+        id: 5,
         name: 'Police Nationale',
         number: '170',
         description: 'Police secours et interventions',
+        color: '#1565C0',
         category: EmergencyCategory.police,
         icon: '🚔',
       ),
-      EmergencyNumber(
-        id: '6',
+      const EmergencyNumber(
+        id: 6,
         name: 'Gendarmerie',
         number: '+225 27 22 40 40 40',
         description: 'Forces de sécurité et maintien de l\'ordre',
+        color: '#1565C0',
         category: EmergencyCategory.police,
         icon: '👮',
       ),
       // Blood Bank
-      EmergencyNumber(
-        id: '7',
+      const EmergencyNumber(
+        id: 7,
         name: 'Centre National de Transfusion Sanguine',
         number: '+225 27 22 44 44 44',
         description: 'Banque de sang et dons de sang',
+        color: '#B71C1C',
         category: EmergencyCategory.bloodBank,
         icon: '🩸',
       ),
-      EmergencyNumber(
-        id: '8',
+      const EmergencyNumber(
+        id: 8,
         name: 'Banque de Sang CHU de Cocody',
         number: '+225 27 22 44 44 44',
         description: 'Dons de sang et produits sanguins',
+        color: '#B71C1C',
         category: EmergencyCategory.bloodBank,
         icon: '🩸',
       ),
       // Other
-      EmergencyNumber(
-        id: '9',
+      const EmergencyNumber(
+        id: 9,
         name: 'SOS Enfants',
         number: '+225 27 22 44 44 44',
         description: 'Protection de l\'enfance en danger',
+        color: '#455A64',
         category: EmergencyCategory.other,
         icon: '👶',
       ),
-      EmergencyNumber(
-        id: '10',
+      const EmergencyNumber(
+        id: 10,
         name: 'Électricité (CIE)',
         number: '+225 27 22 44 44 44',
         description: 'Urgences électriques',
+        color: '#455A64',
         category: EmergencyCategory.other,
         icon: '⚡',
       ),
-      EmergencyNumber(
-        id: '11',
+      const EmergencyNumber(
+        id: 11,
         name: 'Eau (SODECI)',
         number: '+225 27 22 44 44 44',
         description: 'Urgences liées à l\'eau',
+        color: '#455A64',
         category: EmergencyCategory.other,
         icon: '💧',
       ),
@@ -105,4 +116,3 @@ class MockEmergencyNumbers {
         .toList();
   }
 }
-
