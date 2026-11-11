@@ -211,7 +211,6 @@ class PharmacyDetailPage extends ConsumerWidget {
     final hasHalfStar = (clampedRating - fullStars) >= 0.5;
     
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Étoiles pleines
         ...List.generate(fullStars, (index) => Icon(
