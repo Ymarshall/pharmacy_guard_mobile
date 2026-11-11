@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +30,7 @@ void main() {
   testWidgets('captures des écrans principaux', (tester) async {
     if (Platform.environment['SAVE_SHOTS'] != '1') return;
     GoogleFonts.config.allowRuntimeFetching = false;
+    await _loadMaterialIcons(tester);
     final previousOnError = FlutterError.onError;
     FlutterError.onError = (details) {
       final message = details.exceptionAsString();
@@ -91,4 +94,20 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
     await tester.pump(const Duration(seconds: 4));
   });
+}
+
+Future<void> _loadMaterialIcons(WidgetTester tester) async {
+  final root = Platform.environment['FLUTTER_ROOT'] ??
+      '${Platform.environment['HOME']}/flutter-sdk/flutter';
+  final file = File(
+    '$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+  );
+  if (!file.existsSync()) return;
+  final bytes = await tester.runAsync(() => file.readAsBytes());
+  if (bytes == null) return;
+  final loader = FontLoader('MaterialIcons')
+    ..addFont(
+      Future<ByteData>.value(ByteData.sublistView(Uint8List.fromList(bytes))),
+    );
+  await loader.load();
 }

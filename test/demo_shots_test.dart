@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,6 +30,7 @@ void main() {
   testWidgets('liste remplie et fiche pharmacie', (tester) async {
     if (Platform.environment['SAVE_SHOTS'] != '1') return;
     GoogleFonts.config.allowRuntimeFetching = false;
+    await _loadMaterialIcons(tester);
 
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -121,6 +124,20 @@ void main() {
     expect(find.text('Appeler'), findsWidgets);
     await shoot('13-detail-actions');
   });
+}
+
+Future<void> _loadMaterialIcons(WidgetTester tester) async {
+  final root = Platform.environment['FLUTTER_ROOT'] ??
+      '${Platform.environment['HOME']}/flutter-sdk/flutter';
+  final file = File(
+    '$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+  );
+  if (!file.existsSync()) return;
+  final bytes = await tester.runAsync(() => file.readAsBytes());
+  if (bytes == null) return;
+  final loader = FontLoader('MaterialIcons')
+    ..addFont(Future<ByteData>.value(ByteData.sublistView(Uint8List.fromList(bytes))));
+  await loader.load();
 }
 
 class _OfflineNetwork implements NetworkInfo {

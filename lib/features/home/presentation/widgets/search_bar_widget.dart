@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/extensions/theme_extension.dart';
 
@@ -43,24 +42,24 @@ class SearchBarWidget extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
-        GestureDetector(
-          onTap: onFlagTap,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
-            child: SizedBox(
-              width: 48,
-              height: 48,
-              child: Row(
-                children: [
-                  Container(width: 16, height: 48, color: AppColors.accent),
-                  Container(width: 16, height: 48, color: AppColors.surface),
-                  Container(width: 16, height: 48, color: AppColors.primary),
-                ],
+        if (onFlagTap != null) ...[
+          const SizedBox(width: AppSpacing.md),
+          IconButton(
+            onPressed: onFlagTap,
+            tooltip: 'Filtrer',
+            icon: const Icon(Icons.tune),
+            style: IconButton.styleFrom(
+              foregroundColor: context.primary,
+              backgroundColor: context.surface,
+              minimumSize: const Size(48, 48),
+              fixedSize: const Size(48, 48),
+              side: BorderSide(color: context.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

@@ -304,7 +304,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: Column(
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: Column(
         children: [
           Container(
             color: context.primaryDark,
@@ -420,6 +422,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -436,7 +439,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: const EdgeInsets.only(bottom: 16),
       itemCount: pharmacies.length,
       itemBuilder: (context, index) {
         final pharmacy = pharmacies[index];

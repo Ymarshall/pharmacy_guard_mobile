@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 /// Palette de marque de Pharmacie de garde.
 ///
-/// Les couleurs de marque (vert forêt, orange, bleu nuit, statuts pharmacie)
-/// sont inchangées. Les teintes de surface et le thème sombre structurent
-/// cette palette comme le design system de référence (tokens sémantiques
-/// light/dark), sans introduire une nouvelle identité.
+/// Le vert primaire est un vert forêt assombri (#236B40, contraste 6,5:1
+/// avec le blanc). Le bandeau d'en-tête utilise [primaryDark], un cran
+/// plus sombre. L'orange de marque et le bleu nuit restent en place ;
+/// les badges « de garde » utilisent un orange adouci.
 abstract final class AppColors {
-  // Primaire — vert forêt
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color primaryLight = Color(0xFF4CAF50);
-  static const Color primarySurface = Color(0xFFE8F5E9);
+  // Primaire — vert forêt profond (AA avec texte blanc)
+  static const Color primary = Color(0xFF236B40);
+  static const Color primaryDark = Color(0xFF184F2E);
+  static const Color primaryLight = Color(0xFF4F9A5C);
+  static const Color primarySurface = Color(0xFFE7F2EA);
 
   // Secondaire — orange de marque (historique `accent`)
   static const Color accent = Color(0xFFF57C00);
@@ -51,7 +51,7 @@ abstract final class AppColors {
   static const Color successSurface = Color(0xFFE8F5E9);
   static const Color error = Color(0xFFD32F2F);
   static const Color errorSurface = Color(0xFFFFEBEE);
-  static const Color warning = Color(0xFFF57C00);
+  static const Color warning = Color(0xFFC56A12);
   static const Color warningSurface = Color(0xFFFFF3E0);
 
   // Bordures / séparateurs
@@ -61,9 +61,9 @@ abstract final class AppColors {
   static const Color cardBorder = border;
 
   // Pharmacies
-  static const Color pharmacyOpen = Color(0xFF2E7D32);
+  static const Color pharmacyOpen = primary;
   static const Color pharmacyClosed = Color(0xFFD32F2F);
-  static const Color pharmacyOnDuty = Color(0xFFF57C00);
+  static const Color pharmacyOnDuty = warning;
 
   // Ombres très légères (conservées pour les rares élévations)
   static const Color shadowLight = Color(0x08000000);
