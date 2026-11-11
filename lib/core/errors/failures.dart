@@ -44,7 +44,9 @@ class ConflictFailure extends Failure {
 }
 
 class ValidationFailure extends Failure {
-  const ValidationFailure(super.message);
+  final Map<String, String> fieldErrors;
+
+  const ValidationFailure(super.message, {this.fieldErrors = const {}});
 }
 
 /// Permission related failures

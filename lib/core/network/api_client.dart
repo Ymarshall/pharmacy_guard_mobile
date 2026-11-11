@@ -257,9 +257,13 @@ class ApiClient {
       );
     }
     if (code == 400) {
+      final fieldErrors = payload?.fieldErrors ?? const <String, String>{};
+      final phoneError = fieldErrors['phone'];
       return ValidationException(
-        payload?.frenchMessage(ApiErrorMessages.invalidRequest) ??
+        phoneError ??
+            payload?.frenchMessage(ApiErrorMessages.invalidRequest) ??
             ApiErrorMessages.invalidRequest,
+        fieldErrors: fieldErrors,
       );
     }
     if (code >= 500) {

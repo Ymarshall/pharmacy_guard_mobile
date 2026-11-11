@@ -42,7 +42,9 @@ class RateLimitException extends AppException {
 }
 
 class ValidationException extends AppException {
-  const ValidationException(super.message);
+  final Map<String, String> fieldErrors;
+
+  const ValidationException(super.message, {this.fieldErrors = const {}});
 }
 
 class ConflictException extends AppException {

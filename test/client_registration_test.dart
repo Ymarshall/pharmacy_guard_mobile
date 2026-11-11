@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -15,9 +17,11 @@ import 'support/memory_secure_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const phone = '+2250700112233';
+  const phone = '+225 07 12 34 56 78';
 
-  Future<AuthRepositoryImpl> build(http.Client client) async {
+  Future<({AuthRepositoryImpl repository, TokenVault vault})> build(
+    http.Client client,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final vault = TokenVault(store: MemorySecureKeyValueStore());
     final api = ApiClient(
@@ -25,25 +29,29 @@ void main() {
       baseUrl: 'http://example.test/api',
       readAccessToken: () async => (await vault.readValid())?.token,
     );
-    return AuthRepositoryImpl(
-      remoteDataSource: AuthRemoteDataSourceImpl(api),
-      localDataSource: AuthLocalDataSourceImpl(prefs),
-      tokenVault: vault,
+    return (
+      repository: AuthRepositoryImpl(
+        remoteDataSource: AuthRemoteDataSourceImpl(api),
+        localDataSource: AuthLocalDataSourceImpl(prefs),
+        tokenVault: vault,
+      ),
+      vault: vault,
     );
   }
 
-  test('l\'inscription stocke le jeton renvoyé, comme le login', () async {
+  test('le 201 d\'inscription ne lit que le téléphone et stocke le jeton', () async {
     SharedPreferences.setMockInitialValues({});
-    String? seenPath;
-    final repository = await build(
+    final harness = await build(
       MockClient((request) async {
-        seenPath = request.url.path;
+        expect(request.url.path, '/api${ApiConstants.clientRegisterEndpoint}');
         expect(request.headers.containsKey('authorization'), isFalse);
+        expect(jsonDecode(request.body), {'phone': phone});
         return http.Response('''
-{"client":{"id":4,"phone":"$phone","latitude":0,"longitude":0,"providerType":"PHONE","isActive":true},"token":"jwt-inscription","tokenType":"Bearer","expiresInSeconds":3600}
-''', 200);
+{"client":{"id":4,"email":null,"phone":"$phone","firstName":null,"lastName":null,"providerType":"PHONE","latitude":null,"longitude":null,"isActive":true,"createdAt":"2026-11-11T14:00:00","updatedAt":null},"token":"jwt-inscription","tokenType":"Bearer","expiresInSeconds":86400}
+''', 201);
       }),
     );
+    final repository = harness.repository;
 
     final result = await repository.registerClient(phone: phone);
     final session = result.fold(
@@ -51,9 +59,19 @@ void main() {
       (value) => value,
     );
 
-    expect(seenPath, '/api${ApiConstants.clientRegisterEndpoint}');
     expect(session.token, 'jwt-inscription');
+    expect(session.tokenType, 'Bearer');
+    expect(session.expiresInSeconds, 86400);
     expect(session.client.id, 4);
+    expect(session.client.latitude, isNull);
+    expect(session.client.longitude, isNull);
+    final stored = await harness.vault.readValid();
+    expect(stored?.token, 'jwt-inscription');
+    expect(stored?.tokenType, 'Bearer');
+    expect(
+      stored!.expiresAt.difference(DateTime.now()).inSeconds,
+      inInclusiveRange(86390, 86400),
+    );
     final restored = await repository.getCurrentAuth();
     expect(
       restored.fold(
@@ -72,47 +90,59 @@ void main() {
 
   test('un 409 bascule vers une connexion, sans garder de jeton', () async {
     SharedPreferences.setMockInitialValues({});
-    final repository = await build(
+    final harness = await build(
       MockClient((request) async {
         return http.Response(
-          '{"statusCode":409,"message":"Ce numéro est déjà inscrit"}',
+          '{"status":"CONFLICT","statusCode":409,"message":"Un client avec ce numéro de téléphone existe déjà"}',
           409,
         );
       }),
     );
 
-    final result = await repository.registerClient(phone: phone);
+    final result = await harness.repository.registerClient(phone: phone);
     final failure = result.fold((error) => error, (_) => null);
     expect(failure, isA<ConflictFailure>());
-    expect(failure!.message, contains('déjà inscrit'));
+    expect(
+      failure!.message,
+      'Un client avec ce numéro de téléphone existe déjà',
+    );
+    expect(await harness.vault.readValid(), isNull);
   });
 
   test('un 400 d\'inscription expose le message de validation', () async {
     SharedPreferences.setMockInitialValues({});
-    final repository = await build(
+    final harness = await build(
       MockClient((request) async {
         return http.Response(
-          '{"message":"Erreurs de validation","errors":{"phone":"Le numéro de téléphone est obligatoire"}}',
+          '{"statusCode":400,"message":"Erreurs de validation","errors":{"phone":"Le numéro de téléphone doit être un numéro ivoirien valide"}}',
           400,
         );
       }),
     );
 
-    final result = await repository.registerClient(phone: phone);
+    final result = await harness.repository.registerClient(phone: phone);
     final failure = result.fold((error) => error, (_) => null);
     expect(failure, isA<ValidationFailure>());
-    expect(failure!.message, 'Le numéro de téléphone est obligatoire');
+    expect(
+      failure!.message,
+      'Le numéro de téléphone doit être un numéro ivoirien valide',
+    );
+    expect(
+      (failure as ValidationFailure).fieldErrors['phone'],
+      'Le numéro de téléphone doit être un numéro ivoirien valide',
+    );
   });
 
   test('la position part après le jeton, avec le Bearer', () async {
     SharedPreferences.setMockInitialValues({});
     final headers = <String>[];
-    final repository = await build(
+    final harness = await build(
       MockClient((request) async {
         if (request.url.path.endsWith('/register')) {
+          expect(jsonDecode(request.body), {'phone': phone});
           return http.Response('''
-{"client":{"id":4,"phone":"$phone","latitude":0,"longitude":0,"providerType":"PHONE","isActive":true},"token":"jwt-inscription","tokenType":"Bearer","expiresInSeconds":3600}
-''', 200);
+{"client":{"id":4,"email":null,"phone":"$phone","firstName":null,"lastName":null,"providerType":"PHONE","latitude":null,"longitude":null,"isActive":true,"createdAt":null,"updatedAt":null},"token":"jwt-inscription","tokenType":"Bearer","expiresInSeconds":86400}
+''', 201);
         }
         headers.add(request.headers['authorization'] ?? '');
         return http.Response(
@@ -122,8 +152,8 @@ void main() {
       }),
     );
 
-    await repository.registerClient(phone: phone);
-    final updated = await repository.updateLocation(
+    await harness.repository.registerClient(phone: phone);
+    final updated = await harness.repository.updateLocation(
       clientId: 4,
       latitude: 5.36,
       longitude: -4.01,

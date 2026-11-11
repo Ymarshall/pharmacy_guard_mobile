@@ -76,5 +76,5 @@ class ApiErrorMessages {
   static const notFound = 'Ressource non trouvée';
   static const invalidRequest = 'Requête invalide';
   static const alreadyRegistered =
-      'Ce numéro est déjà inscrit. Connectez-vous.';
+      'Un client avec ce numéro de téléphone existe déjà';
 }

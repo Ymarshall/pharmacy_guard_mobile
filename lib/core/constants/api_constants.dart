@@ -20,9 +20,8 @@ class ApiConstants {
   static const String emergencyNumbersEndpoint = '/emergency-numbers';
   static const String authLoginEndpoint = '/auth/client/login';
 
-  /// Inscription publique. Seul ce chemin est à ajuster quand le contrat
-  /// backend sera figé. La réponse attendue est celle du login :
-  /// `client`, `token`, `tokenType`, `expiresInSeconds`.
+  /// `POST /api/auth/client/register`, public. Corps `{ "phone" }` uniquement.
+  /// 201 : même forme que le login (`client`, `token`, `tokenType`, `expiresInSeconds`).
   static const String clientRegisterEndpoint = '/auth/client/register';
   static const String clientsEndpoint = '/clients';
   static const String nearestDutyPharmaciesEndpoint =

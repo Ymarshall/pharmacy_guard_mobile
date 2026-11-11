@@ -12,6 +12,7 @@ import '../../../../config/routes/app_routes.dart';
 import '../../../../core/providers/providers.dart';
 import '../providers/auth_notifier.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../core/utils/ivorian_phone.dart';
 import '../../../../core/services/permission_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -52,13 +53,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.read(authNotifierProvider);
     setState(() => _isLoading = false);
 
-    if (authState.redirectToLogin) {
-      if (mounted) {
-        context.showErrorSnackBar(
-          authState.error ?? 'Ce numéro est déjà inscrit. Connectez-vous.',
-        );
-      }
-    } else if (authState.needsRegistration) {
+    if (authState.needsRegistration) {
       _showRegisterDialog(phone);
     } else if (authState.isAuthenticated && authState.needsLocation) {
       _showLocationPermissionDialog(phone);
@@ -68,8 +63,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           context.navigateToAndRemoveUntil(AppRoutes.home);
         }
       }
-    } else if (authState.error != null) {
-      // Erreur de connexion
+    } else if (authState.phoneError == null && authState.error != null) {
       if (mounted) {
         context.showErrorSnackBar(authState.error!);
       }
@@ -119,18 +113,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref.read(authNotifierProvider.notifier).registerClient(phone: phone);
     if (!mounted) return;
     final authState = ref.read(authNotifierProvider);
-    if (authState.redirectToLogin) {
-      context.showErrorSnackBar(
-        authState.error ?? 'Ce numéro est déjà inscrit. Connectez-vous.',
-      );
-      return;
-    }
     if (authState.needsLocation && authState.isAuthenticated) {
       _showLocationPermissionDialog(phone);
       return;
     }
-    if (authState.error != null) {
-      context.showErrorSnackBar(authState.error!);
+    if (authState.isAuthenticated) {
+      if (!_resumePendingAction() && mounted) {
+        context.navigateToAndRemoveUntil(AppRoutes.home);
+      }
     }
   }
 
@@ -491,22 +481,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           Icons.phone_outlined,
                           color: context.primary,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre numéro de téléphone';
+                        errorText: authState.phoneError,
+                        onChanged: (_) {
+                          if (ref.read(authNotifierProvider).phoneError != null) {
+                            ref
+                                .read(authNotifierProvider.notifier)
+                                .clearPhoneError();
                           }
-                          final cleaned = value.replaceAll(
-                            RegExp(r'[\s\-\(\)]'),
-                            '',
-                          );
-                          if (cleaned.length < 8) {
-                            return 'Numéro de téléphone invalide';
-                          }
-                          return null;
                         },
+                        validator: IvorianPhone.validationMessage,
                       ),
-                      if (authState.error != null &&
-                          !authState.needsLocation) ...[
+                      if (authState.phoneError == null &&
+                          authState.error != null &&
+                          !authState.needsLocation &&
+                          !authState.needsRegistration) ...[
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           authState.error!,

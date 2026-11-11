@@ -56,17 +56,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _initializeDefaultLocation() async {
     // Utiliser la position du client depuis l'auth si disponible
     final authState = ref.read(authNotifierProvider);
-    if (authState.authResponse != null) {
-      final client = authState.authResponse!.client;
+    final latitude = authState.authResponse?.client.latitude;
+    final longitude = authState.authResponse?.client.longitude;
+    if (latitude != null && longitude != null) {
       setState(() {
-        _latitude = client.latitude;
-        _longitude = client.longitude;
+        _latitude = latitude;
+        _longitude = longitude;
       });
 
       final geocodingService = GeocodingServiceImpl();
       final locationInfo = await geocodingService.getLocationInfo(
-        client.latitude,
-        client.longitude,
+        latitude,
+        longitude,
       );
 
       setState(() {

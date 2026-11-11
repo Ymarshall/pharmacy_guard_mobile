@@ -57,7 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ConflictException catch (e) {
       return Left(ConflictFailure(e.message));
     } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
+      return Left(ValidationFailure(e.message, fieldErrors: e.fieldErrors));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
@@ -86,7 +86,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return const Right(null);
     } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
+      return Left(ValidationFailure(e.message, fieldErrors: e.fieldErrors));
     } on UnauthorizedException catch (e) {
       return Left(ServerFailure(e.message));
     } on ServerException catch (e) {

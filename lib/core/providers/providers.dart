@@ -9,6 +9,7 @@ import '../security/token_vault.dart';
 import '../../features/auth/data/datasources/auth_local_datasource.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/pharmacy/data/datasources/pharmacy_local_datasource.dart';
 import '../../features/pharmacy/data/datasources/pharmacy_remote_datasource.dart';
 import '../../features/pharmacy/data/repositories/pharmacy_repository_impl.dart';
@@ -73,7 +74,7 @@ final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
   return AuthRemoteDataSourceImpl(apiClient);
 });
 
-final authRepositoryProvider = Provider<AuthRepositoryImpl>((ref) {
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final localDataSource = ref.watch(authLocalDataSourceProvider);
   final remoteDataSource = ref.watch(authRemoteDataSourceProvider);
   return AuthRepositoryImpl(

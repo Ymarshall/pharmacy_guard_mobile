@@ -215,7 +215,7 @@ void main() {
           expect(request.url.path, '/api/auth/client/register');
           expect(request.headers.containsKey('authorization'), isFalse);
           return http.Response(
-            '{"statusCode":409,"status":"CONFLICT","message":"Ce numéro est déjà inscrit"}',
+            '{"statusCode":409,"status":"CONFLICT","message":"Un client avec ce numéro de téléphone existe déjà"}',
             409,
           );
         }),
@@ -230,7 +230,7 @@ void main() {
           isA<ConflictException>().having(
             (error) => error.message,
             'message',
-            contains('déjà inscrit'),
+            'Un client avec ce numéro de téléphone existe déjà',
           ),
         ),
       );

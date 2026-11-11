@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/security/reconnect_gate.dart';
@@ -9,6 +10,7 @@ class AuthState {
   final AuthResponse? authResponse;
   final bool isLoading;
   final String? error;
+  final String? phoneError;
   final bool needsRegistration;
   final bool needsLocation;
   final bool redirectToLogin;
@@ -17,6 +19,7 @@ class AuthState {
     this.authResponse,
     this.isLoading = false,
     this.error,
+    this.phoneError,
     this.needsRegistration = false,
     this.needsLocation = false,
     this.redirectToLogin = false,
@@ -29,6 +32,8 @@ class AuthState {
     AuthResponse? authResponse,
     bool? isLoading,
     String? error,
+    String? phoneError,
+    bool clearPhoneError = false,
     bool? needsRegistration,
     bool? needsLocation,
     bool? redirectToLogin,
@@ -37,6 +42,7 @@ class AuthState {
       authResponse: authResponse ?? this.authResponse,
       isLoading: isLoading ?? this.isLoading,
       error: error == '' ? null : (error ?? this.error),
+      phoneError: clearPhoneError ? null : (phoneError ?? this.phoneError),
       needsRegistration: needsRegistration ?? this.needsRegistration,
       needsLocation: needsLocation ?? this.needsLocation,
       redirectToLogin: redirectToLogin ?? this.redirectToLogin,
@@ -67,40 +73,67 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> loginWithPhone(String phone) async {
+  Future<void> loginWithPhone(
+    String phone, {
+    bool offerRegistration = true,
+  }) async {
     state = state.copyWith(
       isLoading: true,
-      error: null,
+      error: '',
+      clearPhoneError: true,
       needsRegistration: false,
       needsLocation: false,
       redirectToLogin: false,
     );
     final result = await authRepository.loginWithPhone(phone);
+    _applyLogin(result, offerRegistration: offerRegistration);
+  }
+
+  void _applyLogin(
+    Either<Failure, AuthResponse> result, {
+    required bool offerRegistration,
+  }) {
     result.fold((failure) {
-      if (failure is NotFoundFailure) {
-        state = AuthState(needsRegistration: true, error: failure.message);
+      if (failure is NotFoundFailure && offerRegistration) {
+        state = const AuthState(needsRegistration: true);
+      } else if (failure is ValidationFailure) {
+        state = AuthState(
+          phoneError: failure.fieldErrors['phone'] ?? failure.message,
+        );
       } else {
         state = AuthState(error: failure.message);
       }
     }, (authResponse) => state = AuthState(authResponse: authResponse));
   }
 
-  /// Inscription : la réponse porte le jeton, stocké avant la géolocalisation.
+  /// Inscription publique, puis jeton, puis géolocalisation.
+  /// Un 409 relance le login une fois, sans réouvrir l'inscription.
   Future<void> registerClient({required String phone}) async {
     state = const AuthState(isLoading: true);
     final result = await authRepository.registerClient(phone: phone);
-    result.fold(
-      (failure) {
-        if (failure is ConflictFailure) {
-          state = AuthState(error: failure.message, redirectToLogin: true);
-        } else {
-          state = AuthState(error: failure.message);
-        }
-      },
-      (authResponse) {
-        state = AuthState(authResponse: authResponse, needsLocation: true);
-      },
-    );
+    final failure = result.fold<Failure?>((error) => error, (_) => null);
+    if (failure is ConflictFailure) {
+      final login = await authRepository.loginWithPhone(phone);
+      final loggedIn = login.fold<AuthResponse?>((_) => null, (auth) => auth);
+      if (loggedIn != null) {
+        state = AuthState(authResponse: loggedIn);
+      } else {
+        state = AuthState(error: failure.message);
+      }
+      return;
+    }
+    if (failure is ValidationFailure) {
+      state = AuthState(
+        phoneError: failure.fieldErrors['phone'] ?? failure.message,
+      );
+      return;
+    }
+    if (failure != null) {
+      state = AuthState(error: failure.message);
+      return;
+    }
+    final authResponse = result.fold((_) => null, (auth) => auth);
+    state = AuthState(authResponse: authResponse, needsLocation: true);
   }
 
   Future<void> updateLocation({
@@ -131,6 +164,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
           ),
       (_) => state = AuthState(authResponse: session),
     );
+  }
+
+  void clearPhoneError() {
+    if (state.phoneError == null) return;
+    state = state.copyWith(clearPhoneError: true);
   }
 
   Future<void> signOut() async {

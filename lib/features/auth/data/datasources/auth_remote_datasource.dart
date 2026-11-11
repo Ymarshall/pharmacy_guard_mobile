@@ -6,8 +6,8 @@ import '../models/auth_response_model.dart';
 abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> login(String phone);
 
-  /// Inscription publique. Seul [ApiConstants.clientRegisterEndpoint] change
-  /// quand le contrat backend est figé. La réponse a la forme du login.
+  /// `POST /api/auth/client/register`. Corps : uniquement `phone`.
+  /// Réponse 201 identique au login client.
   Future<AuthResponseModel> register({required String phone});
 
   Future<void> updateLocation({

@@ -18,6 +18,7 @@ class InputField extends StatelessWidget {
     this.onChanged,
     this.maxLines = 1,
     this.enabled = true,
+    this.errorText,
   });
 
   final TextEditingController? controller;
@@ -32,6 +33,7 @@ class InputField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final int maxLines;
   final bool enabled;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +62,7 @@ class InputField extends StatelessWidget {
             hintText: hint,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
+            errorText: errorText,
           ),
         ),
       ],
