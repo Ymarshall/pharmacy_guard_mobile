@@ -250,6 +250,12 @@ class ApiClient {
             ApiErrorMessages.notFound,
       );
     }
+    if (code == 409) {
+      return ConflictException(
+        payload?.frenchMessage(ApiErrorMessages.alreadyRegistered) ??
+            ApiErrorMessages.alreadyRegistered,
+      );
+    }
     if (code == 400) {
       return ValidationException(
         payload?.frenchMessage(ApiErrorMessages.invalidRequest) ??

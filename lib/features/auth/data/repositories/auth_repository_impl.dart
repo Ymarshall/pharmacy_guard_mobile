@@ -47,23 +47,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, AuthResponse>> createClientAndLogin({
+  Future<Either<Failure, AuthResponse>> registerClient({
     required String phone,
-    required double latitude,
-    required double longitude,
   }) async {
     try {
-      // Créer le client
-      final createdClient = await remoteDataSource.createClient(
-        phone: phone,
-        latitude: latitude,
-        longitude: longitude,
-      );
-
-      // Puis se connecter pour obtenir la réponse complète avec les pharmacies
-      final authResponse = await remoteDataSource.login(phone);
+      final authResponse = await remoteDataSource.register(phone: phone);
       await _persistSession(authResponse);
       return Right(authResponse);
+    } on ConflictException catch (e) {
+      return Left(ConflictFailure(e.message));
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
@@ -74,6 +68,39 @@ class AuthRepositoryImpl implements AuthRepository {
       }
       return Left(
         ServerFailure('Erreur lors de la création du compte: ${e.toString()}'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateLocation({
+    required int clientId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      await remoteDataSource.updateLocation(
+        clientId: clientId,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      return const Right(null);
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(e.message));
+    } on UnauthorizedException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      if (e is AppException) {
+        return Left(ServerFailure(e.message));
+      }
+      return Left(
+        ServerFailure(
+          'Erreur lors de la mise à jour de la position: ${e.toString()}',
+        ),
       );
     }
   }

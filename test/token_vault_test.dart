@@ -127,8 +127,13 @@ void main() {
 
 class _FakeAuthRemote implements AuthRemoteDataSource {
   @override
-  Future<ClientModel> createClient({
-    required String phone,
+  Future<AuthResponseModel> register({required String phone}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateLocation({
+    required int clientId,
     required double latitude,
     required double longitude,
   }) {

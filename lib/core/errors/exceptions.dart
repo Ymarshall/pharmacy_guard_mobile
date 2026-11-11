@@ -45,6 +45,10 @@ class ValidationException extends AppException {
   const ValidationException(super.message);
 }
 
+class ConflictException extends AppException {
+  const ConflictException(super.message);
+}
+
 /// Permission related exceptions
 class PermissionException extends AppException {
   const PermissionException(super.message);

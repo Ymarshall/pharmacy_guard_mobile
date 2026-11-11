@@ -8,10 +8,17 @@ import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../config/routes/app_routes.dart';
 import '../../../../core/providers/providers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../onboarding/startup_destination.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
-  const SplashPage({super.key});
+  final bool onboardingCompleted;
+  final Duration hold;
+
+  const SplashPage({
+    super.key,
+    required this.onboardingCompleted,
+    this.hold = const Duration(seconds: 3),
+  });
 
   @override
   ConsumerState<SplashPage> createState() => _SplashPageState();
@@ -43,24 +50,25 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 
   Future<void> _navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(widget.hold);
 
     if (!mounted) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
     final authResult = await ref.read(authRepositoryProvider).getCurrentAuth();
     if (!mounted) return;
     final isLoggedIn = authResult.fold((_) => false, (auth) => auth != null);
 
-    if (isLoggedIn) {
-      context.navigateToAndRemoveUntil(AppRoutes.home);
-    } else if (hasSeenOnboarding) {
-      context.navigateToAndRemoveUntil(AppRoutes.login);
-    } else {
-      context.navigateToAndRemoveUntil(AppRoutes.onboarding);
+    final destination = resolveAppStart(
+      onboardingCompleted: widget.onboardingCompleted,
+      hasValidSession: isLoggedIn,
+    );
+    switch (destination) {
+      case AppStart.home:
+        context.navigateToAndRemoveUntil(AppRoutes.home);
+      case AppStart.login:
+        context.navigateToAndRemoveUntil(AppRoutes.login);
+      case AppStart.onboarding:
+        context.navigateToAndRemoveUntil(AppRoutes.onboarding);
     }
   }
 

@@ -13,27 +13,36 @@ class ApiConstants {
       return 'http://localhost:8080/api';
     }
   }
-  
+
   // Endpoints
   static const String pharmaciesEndpoint = '/pharmacies';
   static const String searchEndpoint = '/search';
   static const String emergencyNumbersEndpoint = '/emergency-numbers';
   static const String authLoginEndpoint = '/auth/client/login';
+
+  /// Inscription publique. Seul ce chemin est à ajuster quand le contrat
+  /// backend sera figé. La réponse attendue est celle du login :
+  /// `client`, `token`, `tokenType`, `expiresInSeconds`.
+  static const String clientRegisterEndpoint = '/auth/client/register';
   static const String clientsEndpoint = '/clients';
-  static const String nearestDutyPharmaciesEndpoint = '/client/pharmacies/nearest-duty';
+  static const String nearestDutyPharmaciesEndpoint =
+      '/client/pharmacies/nearest-duty';
   static const String nearestPharmaciesEndpoint = '/client/pharmacies/nearest';
-  
+
   // Review endpoints
-  static String pharmacyReviewsEndpoint(int pharmacyId) => '/client/pharmacies/$pharmacyId/reviews';
-  static String updateReviewEndpoint(int reviewId) => '/client/pharmacies/reviews/$reviewId';
-  static String deleteReviewEndpoint(int reviewId) => '/client/pharmacies/reviews/$reviewId';
-  static String pharmacyRatingSummaryEndpoint(int pharmacyId) => '/client/pharmacies/$pharmacyId/rating-summary';
-  
+  static String pharmacyReviewsEndpoint(int pharmacyId) =>
+      '/client/pharmacies/$pharmacyId/reviews';
+  static String updateReviewEndpoint(int reviewId) =>
+      '/client/pharmacies/reviews/$reviewId';
+  static String deleteReviewEndpoint(int reviewId) =>
+      '/client/pharmacies/reviews/$reviewId';
+  static String pharmacyRatingSummaryEndpoint(int pharmacyId) =>
+      '/client/pharmacies/$pharmacyId/rating-summary';
+
   // Report endpoints
   static const String reportDutyEndpoint = '/client/pharmacies/duty/report';
-  
+
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 }
-

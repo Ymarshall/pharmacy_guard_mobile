@@ -42,6 +42,10 @@ void main() {
       ProtectedEndpoints.requiresBearer('POST', '/auth/client/login'),
       isFalse,
     );
+    expect(
+      ProtectedEndpoints.requiresBearer('POST', '/auth/client/register'),
+      isFalse,
+    );
     expect(ProtectedEndpoints.requiresBearer('POST', '/clients'), isFalse);
   });
 
@@ -197,6 +201,60 @@ void main() {
           (error) => error.message,
           'message',
           'Le numéro de téléphone est obligatoire',
+        ),
+      ),
+    );
+  });
+
+  test(
+    'une inscription en conflit 409 indique que le numéro existe déjà',
+    () async {
+      final api = ApiClient(
+        baseUrl: base,
+        client: MockClient((request) async {
+          expect(request.url.path, '/api/auth/client/register');
+          expect(request.headers.containsKey('authorization'), isFalse);
+          return http.Response(
+            '{"statusCode":409,"status":"CONFLICT","message":"Ce numéro est déjà inscrit"}',
+            409,
+          );
+        }),
+      );
+
+      expect(
+        () => api.post(
+          '/auth/client/register',
+          body: {'phone': '+2250700112233'},
+        ),
+        throwsA(
+          isA<ConflictException>().having(
+            (error) => error.message,
+            'message',
+            contains('déjà inscrit'),
+          ),
+        ),
+      );
+    },
+  );
+
+  test('une inscription invalide reprend les erreurs de champ', () async {
+    final api = ApiClient(
+      baseUrl: base,
+      client: MockClient((request) async {
+        return http.Response(
+          '{"statusCode":400,"message":"Erreurs de validation","errors":{"phone":"Le numéro de téléphone doit contenir entre 8 et 20 caractères"}}',
+          400,
+        );
+      }),
+    );
+
+    expect(
+      () => api.post('/auth/client/register', body: {'phone': '12'}),
+      throwsA(
+        isA<ValidationException>().having(
+          (error) => error.message,
+          'message',
+          'Le numéro de téléphone doit contenir entre 8 et 20 caractères',
         ),
       ),
     );

@@ -75,4 +75,6 @@ class ApiErrorMessages {
   static const forbidden = 'Accès refusé';
   static const notFound = 'Ressource non trouvée';
   static const invalidRequest = 'Requête invalide';
+  static const alreadyRegistered =
+      'Ce numéro est déjà inscrit. Connectez-vous.';
 }

@@ -9,14 +9,17 @@ class AuthState {
   final AuthResponse? authResponse;
   final bool isLoading;
   final String? error;
-  final bool
-  needsLocation; // Indique si on a besoin de la géolocalisation pour créer le compte
+  final bool needsRegistration;
+  final bool needsLocation;
+  final bool redirectToLogin;
 
   const AuthState({
     this.authResponse,
     this.isLoading = false,
     this.error,
+    this.needsRegistration = false,
     this.needsLocation = false,
+    this.redirectToLogin = false,
   });
 
   bool get isAuthenticated => authResponse != null;
@@ -26,13 +29,17 @@ class AuthState {
     AuthResponse? authResponse,
     bool? isLoading,
     String? error,
+    bool? needsRegistration,
     bool? needsLocation,
+    bool? redirectToLogin,
   }) {
     return AuthState(
       authResponse: authResponse ?? this.authResponse,
       isLoading: isLoading ?? this.isLoading,
       error: error == '' ? null : (error ?? this.error),
+      needsRegistration: needsRegistration ?? this.needsRegistration,
       needsLocation: needsLocation ?? this.needsLocation,
+      redirectToLogin: redirectToLogin ?? this.redirectToLogin,
     );
   }
 }
@@ -61,37 +68,68 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> loginWithPhone(String phone) async {
-    state = state.copyWith(isLoading: true, error: null, needsLocation: false);
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      needsRegistration: false,
+      needsLocation: false,
+      redirectToLogin: false,
+    );
     final result = await authRepository.loginWithPhone(phone);
     result.fold((failure) {
       if (failure is NotFoundFailure) {
-        // Client n'existe pas, on a besoin de la géolocalisation
-        state = state.copyWith(
-          isLoading: false,
-          needsLocation: true,
-          error: failure.message,
-        );
+        state = AuthState(needsRegistration: true, error: failure.message);
       } else {
-        state = state.copyWith(isLoading: false, error: failure.message);
+        state = AuthState(error: failure.message);
       }
     }, (authResponse) => state = AuthState(authResponse: authResponse));
   }
 
-  Future<void> createClientAndLogin({
-    required String phone,
+  /// Inscription : la réponse porte le jeton, stocké avant la géolocalisation.
+  Future<void> registerClient({required String phone}) async {
+    state = const AuthState(isLoading: true);
+    final result = await authRepository.registerClient(phone: phone);
+    result.fold(
+      (failure) {
+        if (failure is ConflictFailure) {
+          state = AuthState(error: failure.message, redirectToLogin: true);
+        } else {
+          state = AuthState(error: failure.message);
+        }
+      },
+      (authResponse) {
+        state = AuthState(authResponse: authResponse, needsLocation: true);
+      },
+    );
+  }
+
+  Future<void> updateLocation({
     required double latitude,
     required double longitude,
   }) async {
-    state = state.copyWith(isLoading: true, error: null, needsLocation: false);
-    final result = await authRepository.createClientAndLogin(
-      phone: phone,
+    final clientId = state.authResponse?.client.id;
+    final session = state.authResponse;
+    if (clientId == null || session == null) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Compte introuvable pour enregistrer la position.',
+      );
+      return;
+    }
+    state = state.copyWith(isLoading: true, error: '');
+    final result = await authRepository.updateLocation(
+      clientId: clientId,
       latitude: latitude,
       longitude: longitude,
     );
     result.fold(
       (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (authResponse) => state = AuthState(authResponse: authResponse),
+          state = AuthState(
+            authResponse: session,
+            needsLocation: true,
+            error: failure.message,
+          ),
+      (_) => state = AuthState(authResponse: session),
     );
   }
 

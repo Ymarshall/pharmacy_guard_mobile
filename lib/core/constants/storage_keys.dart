@@ -8,6 +8,10 @@ class StorageKeys {
   static const String lastSearch = 'last_search';
   static const String notificationsEnabled = 'notifications_enabled';
 
+  /// L'onboarding a été quitté via « Terminer » ou « Passer ».
+  /// Une déconnexion ne remet pas cette valeur à false.
+  static const String onboardingCompleted = 'onboardingCompleted';
+
   // Cache keys
   static const String emergencyNumbersCache = 'emergency_numbers_cache';
 

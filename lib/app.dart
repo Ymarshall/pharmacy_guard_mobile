@@ -11,8 +11,13 @@ import 'features/home/presentation/pages/home_page.dart';
 
 class App extends StatelessWidget {
   final SharedPreferences sharedPreferences;
+  final bool onboardingCompleted;
 
-  const App({super.key, required this.sharedPreferences});
+  const App({
+    super.key,
+    required this.sharedPreferences,
+    required this.onboardingCompleted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +26,15 @@ class App extends StatelessWidget {
         // Override le provider avec la valeur déjà chargée
         sharedPreferencesInstanceProvider.overrideWithValue(sharedPreferences),
       ],
-      child: const _PharmacieApp(),
+      child: _PharmacieApp(onboardingCompleted: onboardingCompleted),
     );
   }
 }
 
 class _PharmacieApp extends ConsumerWidget {
-  const _PharmacieApp();
+  final bool onboardingCompleted;
+
+  const _PharmacieApp({required this.onboardingCompleted});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,7 +47,8 @@ class _PharmacieApp extends ConsumerWidget {
       themeMode: AppTheme.getThemeMode(),
       initialRoute: AppRoutes.splash,
       routes: {
-        AppRoutes.splash: (context) => const SplashPage(),
+        AppRoutes.splash:
+            (context) => SplashPage(onboardingCompleted: onboardingCompleted),
         AppRoutes.onboarding: (context) => const OnboardingPage(),
         AppRoutes.login: (context) => const LoginPage(),
         AppRoutes.home: (context) => const HomePage(),

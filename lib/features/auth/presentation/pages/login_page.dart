@@ -52,8 +52,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.read(authNotifierProvider);
     setState(() => _isLoading = false);
 
-    if (authState.needsLocation) {
-      // Le client n'existe pas, on doit demander la géolocalisation via un popup
+    if (authState.redirectToLogin) {
+      if (mounted) {
+        context.showErrorSnackBar(
+          authState.error ?? 'Ce numéro est déjà inscrit. Connectez-vous.',
+        );
+      }
+    } else if (authState.needsRegistration) {
+      _showRegisterDialog(phone);
+    } else if (authState.isAuthenticated && authState.needsLocation) {
       _showLocationPermissionDialog(phone);
     } else if (authState.isAuthenticated) {
       if (!_resumePendingAction()) {
@@ -66,6 +73,64 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         context.showErrorSnackBar(authState.error!);
       }
+    }
+  }
+
+  void _showRegisterDialog(String phone) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Créer un compte'),
+          content: const Text(
+            'Ce numéro n\'est pas encore inscrit. Nous créons votre compte, '
+            'puis nous vous demanderons votre position pour les pharmacies proches.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _register(phone);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Créer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _register(String phone) async {
+    await ref.read(authNotifierProvider.notifier).registerClient(phone: phone);
+    if (!mounted) return;
+    final authState = ref.read(authNotifierProvider);
+    if (authState.redirectToLogin) {
+      context.showErrorSnackBar(
+        authState.error ?? 'Ce numéro est déjà inscrit. Connectez-vous.',
+      );
+      return;
+    }
+    if (authState.needsLocation && authState.isAuthenticated) {
+      _showLocationPermissionDialog(phone);
+      return;
+    }
+    if (authState.error != null) {
+      context.showErrorSnackBar(authState.error!);
     }
   }
 
@@ -91,14 +156,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ],
           ),
           content: const Text(
-            'Pour créer votre compte, nous avons besoin de votre position. '
-            'Cela nous permet de vous proposer les pharmacies de garde les plus proches de vous.',
+            'Votre compte est créé. Autorisez la géolocalisation pour afficher '
+            'les pharmacies de garde les plus proches.',
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
                 setState(() => _isLoading = false);
+                if (ref.read(authNotifierProvider).isAuthenticated && mounted) {
+                  context.navigateToAndRemoveUntil(AppRoutes.home);
+                }
               },
               child: const Text('Annuler'),
             ),
@@ -279,11 +347,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
       }
 
-      // Créer le compte avec la position
       await ref
           .read(authNotifierProvider.notifier)
-          .createClientAndLogin(
-            phone: phone,
+          .updateLocation(
             latitude: position.latitude,
             longitude: position.longitude,
           );
@@ -295,7 +361,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       final authState = ref.read(authNotifierProvider);
 
-      if (authState.isAuthenticated) {
+      if (authState.isAuthenticated && authState.error == null) {
         if (_resumePendingAction()) return;
         if (mounted) {
           context.showSnackBar('Compte créé avec succès !');
@@ -319,6 +385,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   TextButton(
                     onPressed: () {
                       Navigator.pop(dialogContext);
+                      if (authState.isAuthenticated && mounted) {
+                        context.navigateToAndRemoveUntil(AppRoutes.home);
+                      }
                     },
                     child: const Text('OK'),
                   ),
