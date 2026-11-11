@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
+import '../../../../shared/widgets/status_badge.dart';
+import '../../../../shared/widgets/surface_card.dart';
 import '../../domain/entities/pharmacy.dart';
 import '../../../../core/utils/distance_utils.dart';
 
@@ -61,23 +64,15 @@ class _PharmacyCardState extends State<PharmacyCard>
       child: AnimatedScale(
         scale: _isPressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 100),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadowMedium,
-                blurRadius: 14,
-                offset: const Offset(0, 2),
-                spreadRadius: 0,
-              ),
-            ],
+        child: SurfaceCard(
+          margin: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
+          padding: AppSpacing.paddingLg,
+          child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -86,9 +81,10 @@ class _PharmacyCardState extends State<PharmacyCard>
                     Expanded(
                       child: Text(
                         widget.pharmacy.name,
-                        style: TextStyles.titleLarge.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: context.onSurface,
+                            ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -104,13 +100,15 @@ class _PharmacyCardState extends State<PharmacyCard>
                     Icon(
                       Icons.location_on_outlined,
                       size: 18,
-                      color: AppColors.textSecondary,
+                      color: context.textTertiary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _getAddress(),
-                        style: TextStyles.bodyMedium,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: context.textSecondary,
+                            ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -222,7 +220,6 @@ class _PharmacyCardState extends State<PharmacyCard>
                 ),
               ],
             ),
-          ),
         ),
       ),
     );
@@ -247,27 +244,11 @@ class _PharmacyCardState extends State<PharmacyCard>
       badgeIcon = Icons.cancel_outlined;
     }
 
-    Widget badge = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(badgeIcon, size: 14, color: badgeColor),
-          const SizedBox(width: 6),
-          Text(
-            badgeText,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: badgeColor,
-            ),
-          ),
-        ],
-      ),
+    final Widget badge = StatusBadge(
+      label: badgeText,
+      icon: badgeIcon,
+      color: badgeColor.withValues(alpha: 0.12),
+      textColor: badgeColor,
     );
 
     // Animation pulsante pour les pharmacies ouvertes
@@ -306,31 +287,11 @@ class _PharmacyCardState extends State<PharmacyCard>
       chipIcon = Icons.cancel_outlined;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            chipIcon,
-            size: 14,
-            color: chipColor,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            chipText,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: chipColor,
-            ),
-          ),
-        ],
-      ),
+    return StatusBadge(
+      label: chipText,
+      icon: chipIcon,
+      color: chipColor.withValues(alpha: 0.12),
+      textColor: chipColor,
     );
   }
 
@@ -340,10 +301,10 @@ class _PharmacyCardState extends State<PharmacyCard>
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(10),
+        color: context.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppSpacing.borderRadiusPill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -352,9 +313,9 @@ class _PharmacyCardState extends State<PharmacyCard>
           const SizedBox(width: 6),
           Text(
             text,
-            style: TextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.textSecondary,
+                ),
           ),
         ],
       ),
@@ -387,28 +348,31 @@ class _PharmacyCardState extends State<PharmacyCard>
         icon: Icon(icon, size: 18),
         label: Text(label),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textLight,
+          backgroundColor: context.primary,
+          foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
           ),
         ),
       );
     } else {
       return OutlinedButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon, size: 18, color: AppColors.accent),
+        icon: Icon(icon, size: 18, color: context.primary),
         label: Text(
           label,
-          style: const TextStyle(color: AppColors.accent),
+          style: TextStyle(color: context.primary),
         ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.accent, width: 1.5),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          foregroundColor: context.primary,
+          side: BorderSide(color: context.primary, width: 1.2),
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.controlRadius),
           ),
         ),
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../config/themes/colors.dart';
-import 'app_button.dart';
+import '../../core/constants/app_spacing.dart';
+import '../../core/extensions/theme_extension.dart';
+import 'primary_button.dart';
 
 class AppErrorWidget extends StatelessWidget {
   final String message;
@@ -20,43 +21,36 @@ class AppErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: AppSpacing.paddingXl2,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon ?? Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
-            const SizedBox(height: 16),
-            if (title != null) ...[
-              Text(
-                title!,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-            ],
+            Icon(icon ?? Icons.error_outline, size: 36, color: context.error),
+            const SizedBox(height: AppSpacing.lg),
             Text(
-              message,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              title ?? 'Une erreur est survenue',
+              style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: AppSpacing.xs),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.textTertiary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ),
             if (onRetry != null) ...[
-              const SizedBox(height: 24),
-              AppButton(
-                text: 'Réessayer',
+              const SizedBox(height: AppSpacing.lg),
+              PrimaryButton(
+                label: 'Réessayer',
                 onPressed: onRetry,
+                isFullWidth: false,
+                variant: ButtonVariant.outline,
                 icon: Icons.refresh,
-                width: 200,
               ),
             ],
           ],
@@ -65,4 +59,3 @@ class AppErrorWidget extends StatelessWidget {
     );
   }
 }
-

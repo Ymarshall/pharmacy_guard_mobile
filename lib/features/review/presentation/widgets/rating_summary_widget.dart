@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_decorations.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/styles/text_styles.dart';
 import '../../domain/entities/rating_summary.dart';
 
@@ -15,12 +17,8 @@ class RatingSummaryWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (ratingSummary == null || ratingSummary!.totalReviews == 0) {
       return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
+        padding: AppSpacing.paddingLg,
+        decoration: AppDecorations.cardDecoration(context),
         child: Row(
           children: [
             Icon(Icons.star_outline, color: AppColors.textSecondary, size: 24),
@@ -37,12 +35,8 @@ class RatingSummaryWidget extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
+      padding: AppSpacing.paddingLg,
+      decoration: AppDecorations.cardDecoration(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/constants/app_typography.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/icon_chip.dart';
 import '../../../../config/routes/app_routes.dart';
 import '../../../about/presentation/pages/about_page.dart';
 import '../../../help/presentation/pages/help_page.dart';
@@ -15,70 +17,62 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.background,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.lg,
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
-                    ),
-                    child: const Icon(
-                      Icons.local_pharmacy,
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                  IconChip(
+                    icon: Icons.local_pharmacy_outlined,
+                    size: 52,
+                    iconSize: 26,
+                    backgroundColor: context.primaryDark,
+                    iconColor: Colors.white,
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
                     'Pharmacie de Garde',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: context.onSurface,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Côte d\'Ivoire',
+                    style: AppTypography.caption.copyWith(
+                      color: context.textTertiary,
                     ),
                   ),
                 ],
               ),
             ),
-            // Menu items
+            Divider(color: context.divider, height: 1),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.home_outlined, color: AppColors.primary),
-                    title: Text(
-                      'Accueil',
-                      style: TextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
+                  _item(
+                    context,
+                    icon: Icons.home_outlined,
+                    label: 'Accueil',
+                    onTap: () => Navigator.pop(context),
                   ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.info_outline, color: AppColors.primary),
-                    title: Text(
-                      'À propos',
-                      style: TextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                  _item(
+                    context,
+                    icon: Icons.info_outline,
+                    label: 'À propos',
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -89,15 +83,10 @@ class AppDrawer extends ConsumerWidget {
                       );
                     },
                   ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.settings_outlined, color: AppColors.primary),
-                    title: Text(
-                      'Paramètres',
-                      style: TextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                  _item(
+                    context,
+                    icon: Icons.settings_outlined,
+                    label: 'Paramètres',
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -108,15 +97,10 @@ class AppDrawer extends ConsumerWidget {
                       );
                     },
                   ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.help_outline, color: AppColors.primary),
-                    title: Text(
-                      'Aide',
-                      style: TextStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                  _item(
+                    context,
+                    icon: Icons.help_outline,
+                    label: 'Aide',
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -127,15 +111,11 @@ class AppDrawer extends ConsumerWidget {
                       );
                     },
                   ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.logout_outlined, color: AppColors.error),
-                    title: Text(
-                      'Déconnexion',
-                      style: TextStyles.bodyLarge.copyWith(
-                        color: AppColors.error,
-                      ),
-                    ),
+                  _item(
+                    context,
+                    icon: Icons.logout_outlined,
+                    label: 'Déconnexion',
+                    color: context.error,
                     onTap: () {
                       Navigator.pop(context);
                       _showLogoutDialog(context, ref);
@@ -144,20 +124,45 @@ class AppDrawer extends ConsumerWidget {
                 ],
               ),
             ),
-            // Footer
-            const Divider(),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.paddingLg,
               child: Text(
                 'Version 1.0.0',
-                style: TextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                style: AppTypography.caption.copyWith(
+                  color: context.textTertiary,
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _item(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    final tint = color ?? context.primary;
+    return ListTile(
+      leading: IconChip(
+        icon: icon,
+        size: 40,
+        iconSize: 18,
+        backgroundColor: tint.withValues(alpha: 0.12),
+        iconColor: tint,
+      ),
+      title: Text(
+        label,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: color ?? context.onSurface,
+            ),
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
     );
   }
 
@@ -180,9 +185,9 @@ class AppDrawer extends ConsumerWidget {
                 Navigator.pop(dialogContext);
                 await _logout(context, ref);
               },
-              child: const Text(
+              child: Text(
                 'Déconnexion',
-                style: TextStyle(color: AppColors.error),
+                style: TextStyle(color: context.error),
               ),
             ),
           ],
@@ -194,7 +199,7 @@ class AppDrawer extends ConsumerWidget {
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(authNotifierProvider.notifier).signOut();
-      
+
       if (context.mounted) {
         context.navigateToAndRemoveUntil(AppRoutes.login);
       }
@@ -205,4 +210,3 @@ class AppDrawer extends ConsumerWidget {
     }
   }
 }
-

@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/constants/app_typography.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../config/routes/app_routes.dart';
 import '../../../../core/constants/storage_keys.dart';
@@ -72,38 +75,21 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: context.primaryDark,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.primaryDark,
-            ],
-          ),
-        ),
+        color: context.primaryDark,
         child: Center(
           child: FadeTransition(
             opacity: _fadeAnimation,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo avec les couleurs de la Côte d'Ivoire
               Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(AppSpacing.borderRadiusLg),
                   color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -120,16 +106,9 @@ class _SplashPageState extends State<SplashPage>
                       child: Container(
                         width: 20,
                         height: 20,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.accent,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accent.withOpacity(0.5),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
                         ),
                         child: const Icon(
                           Icons.star,
@@ -141,21 +120,18 @@ class _SplashPageState extends State<SplashPage>
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              const Text(
+              const SizedBox(height: AppSpacing.xl3),
+              Text(
                 'Pharmacie de Garde',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                style: AppTypography.headlineMedium.copyWith(
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              const SizedBox(height: AppSpacing.sm),
+              Text(
                 'Trouvez votre pharmacie 24/7',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: Colors.white.withValues(alpha: 0.78),
                 ),
               ),
             ],

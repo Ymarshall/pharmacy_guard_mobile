@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/themes/colors.dart';
-import '../../../../shared/styles/text_styles.dart';
+import '../../../../core/extensions/theme_extension.dart';
+import '../../../../shared/widgets/input_field.dart';
 
 class ReviewDialog extends ConsumerStatefulWidget {
   final int? initialRating;
@@ -39,12 +39,8 @@ class _ReviewDialogState extends ConsumerState<ReviewDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
       title: Text(
         widget.isEdit ? 'Modifier votre avis' : 'Donner votre avis',
-        style: TextStyles.titleLarge,
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -53,9 +49,7 @@ class _ReviewDialogState extends ConsumerState<ReviewDialog> {
           children: [
             Text(
               'Note',
-              style: TextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 12),
             Row(
@@ -72,7 +66,7 @@ class _ReviewDialogState extends ConsumerState<ReviewDialog> {
                     child: Icon(
                       index < _rating ? Icons.star : Icons.star_border,
                       size: 40,
-                      color: Colors.amber,
+                      color: context.secondary,
                     ),
                   ),
                 );
@@ -81,36 +75,13 @@ class _ReviewDialogState extends ConsumerState<ReviewDialog> {
             const SizedBox(height: 24),
             Text(
               'Commentaire',
-              style: TextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 12),
-            TextField(
+            InputField(
               controller: _commentController,
+              hint: 'Partagez votre expérience...',
               maxLines: 5,
-              style: TextStyles.bodyLarge.copyWith(
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Partagez votre expérience...',
-                hintStyle: TextStyle(
-                  color: AppColors.textTertiary,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                ),
-                filled: true,
-                fillColor: AppColors.background,
-              ),
             ),
           ],
         ),
@@ -127,13 +98,6 @@ class _ReviewDialogState extends ConsumerState<ReviewDialog> {
               'comment': _commentController.text.trim(),
             });
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
           child: Text(widget.isEdit ? 'Modifier' : 'Publier'),
         ),
       ],

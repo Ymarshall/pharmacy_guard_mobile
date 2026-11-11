@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/themes/colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/extensions/theme_extension.dart';
 import '../../../../shared/styles/text_styles.dart';
 import '../../../../shared/extensions/context_extensions.dart';
+import '../../../../shared/widgets/icon_chip.dart';
+import '../../../../shared/widgets/screen_app_bar.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/surface_card.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -20,10 +26,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Paramètres'),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'Paramètres'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -177,33 +181,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(
-        title,
-        style: TextStyles.titleMedium.copyWith(
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-      ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: SectionHeader(title: title),
     );
   }
 
   Widget _buildSettingsCard({required List<Widget> children}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: children,
-      ),
+    return SurfaceCard(
+      padding: EdgeInsets.zero,
+      child: Column(children: children),
     );
   }
 
@@ -215,14 +201,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required IconData icon,
   }) {
     return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: AppColors.primary, size: 20),
-      ),
+      leading: IconChip(icon: icon, size: 40, iconSize: 18),
       title: Text(
         title,
         style: TextStyles.bodyLarge.copyWith(
@@ -238,7 +217,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AppColors.primary,
+        activeThumbColor: context.primary,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
@@ -251,14 +230,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required VoidCallback? onTap,
   }) {
     return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: AppColors.primary, size: 20),
-      ),
+      leading: IconChip(icon: icon, size: 40, iconSize: 18),
       title: Text(
         title,
         style: TextStyles.bodyLarge.copyWith(
@@ -421,10 +393,8 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Politique de confidentialité'),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'Politique de confidentialité'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -521,10 +491,8 @@ class TermsOfServicePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Conditions d\'utilisation'),
-      ),
+      backgroundColor: context.background,
+      appBar: const ScreenAppBar(title: 'Conditions d\'utilisation'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
