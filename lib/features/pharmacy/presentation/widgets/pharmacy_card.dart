@@ -60,7 +60,7 @@ class _PharmacyCardState extends State<PharmacyCard>
         AppSpacing.lg,
         AppSpacing.sm,
       ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 8, 4),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -91,64 +91,67 @@ class _PharmacyCardState extends State<PharmacyCard>
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildStatusBadge(),
-                    if (widget.pharmacy.hasGps &&
-                        widget.pharmacy.distance != null) ...[
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildDistanceLine(
-                          context,
-                          widget.pharmacy.distance!,
-                        ),
-                      ),
-                    ] else if (!widget.pharmacy.hasGps) ...[
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Localisation indisponible',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(
-                            color: context.textTertiary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
               ],
             ),
           ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _roundAction(
-                  icon: Icons.phone_outlined,
-                  label: 'Appeler',
-                  background: context.primarySurface,
-                  foreground: context.primary,
-                  onPressed: _callPharmacy,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onTap,
+                  child: Row(
+                    children: [
+                      _buildStatusBadge(),
+                      if (widget.pharmacy.hasGps &&
+                          widget.pharmacy.distance != null) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildDistanceLine(
+                            context,
+                            widget.pharmacy.distance!,
+                          ),
+                        ),
+                      ] else if (!widget.pharmacy.hasGps) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Localisation indisponible',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: context.textTertiary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                _roundAction(
-                  icon: Icons.directions_outlined,
-                  label:
-                      widget.pharmacy.hasGps
-                          ? 'Itinéraire'
-                          : 'Localisation indisponible',
-                  background: context.surfaceSubtle,
-                  foreground: context.primary,
-                  onPressed: widget.pharmacy.hasGps ? _openDirections : null,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 4),
+              _roundAction(
+                icon: Icons.phone_outlined,
+                label: 'Appeler',
+                background: context.primarySurface,
+                foreground: context.primary,
+                onPressed: _callPharmacy,
+              ),
+              _roundAction(
+                icon: Icons.directions_outlined,
+                label:
+                    widget.pharmacy.hasGps
+                        ? 'Itinéraire'
+                        : 'Localisation indisponible',
+                background: context.surfaceSubtle,
+                foreground: context.primary,
+                onPressed: widget.pharmacy.hasGps ? _openDirections : null,
+              ),
+            ],
           ),
         ],
       ),
@@ -227,7 +230,14 @@ class _PharmacyCardState extends State<PharmacyCard>
           color: context.textTertiary,
         ),
         const SizedBox(width: 4),
-        Text(DistanceUtils.formatWalkingTime(distance), style: style),
+        Flexible(
+          child: Text(
+            DistanceUtils.formatWalkingTime(distance),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        ),
       ],
     );
   }
