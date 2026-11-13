@@ -83,6 +83,30 @@ void main() {
     expect(find.byType(OnboardingPage), findsNothing);
   });
 
+  testWidgets('Suivant va à la page suivante et ne termine pas l\'onboarding', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(_onboardingApp(prefs));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Trouvez votre pharmacie'), findsOneWidget);
+    expect(find.text('Suivant'), findsOneWidget);
+
+    await tester.tap(find.text('Suivant'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OnboardingPage), findsOneWidget);
+    expect(find.text('Pharmacies de garde'), findsOneWidget);
+    expect(find.text('Trouvez votre pharmacie'), findsNothing);
+    expect(find.text('Suivant'), findsOneWidget);
+    expect(find.text('Terminer'), findsNothing);
+    expect(find.text('Connexion'), findsNothing);
+    expect(prefs.getBool(StorageKeys.onboardingCompleted), isNot(true));
+  });
+
   testWidgets('Passer enregistre le booléen et ouvre la connexion', (
     tester,
   ) async {

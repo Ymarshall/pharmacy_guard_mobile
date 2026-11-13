@@ -75,19 +75,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         _commune = locationInfo.commune;
       });
     } else {
-      // Valeurs par défaut si pas d'auth
-      final geocodingService = GeocodingServiceImpl();
-      final defaultLat = 5.3600;
-      final defaultLng = -4.0083;
-      final locationInfo = await geocodingService.getLocationInfo(
-        defaultLat,
-        defaultLng,
-      );
-
-      setState(() {
-        _city = locationInfo.city;
-        _commune = locationInfo.commune;
-      });
+      // Pas de libellé de lieu tant qu'on n'a pas une vraie position.
     }
   }
 
@@ -164,19 +152,13 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Recharger les pharmacies de garde les plus proches avec la nouvelle position
       await _loadNearestDutyPharmacies();
     } catch (e) {
-      // En cas d'erreur, utiliser les valeurs par défaut
-      final geocodingService = GeocodingServiceImpl();
-      final defaultLat = _latitude ?? 5.3600;
-      final defaultLng = _longitude ?? -4.0083;
-      final locationInfo = await geocodingService.getLocationInfo(
-        defaultLat,
-        defaultLng,
-      );
-
-      setState(() {
-        _city = locationInfo.city;
-        _commune = locationInfo.commune;
-      });
+      // Ne pas afficher un lieu inventé (ex. Plateau) si le GPS échoue.
+      if (_city == null && _commune == null) {
+        setState(() {
+          _city = '';
+          _commune = '';
+        });
+      }
     }
   }
 
@@ -301,6 +283,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
+  bool get _hasLocationLabel => _city != null || _commune != null;
+
+  String get _locationLabel {
+    return LocationInfo(
+      city: _city ?? '',
+      commune: _commune ?? '',
+    ).displayLabel;
+  }
+
   @override
   Widget build(BuildContext context) {
     final pharmacyState = ref.watch(pharmacyNotifierProvider);
@@ -341,130 +332,141 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 96),
-        child: Column(
-          children: [
-            Container(
-              color: context.primaryDark,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.sm,
-                    AppSpacing.sm,
-                    AppSpacing.xl2,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed:
-                                () => _scaffoldKey.currentState?.openDrawer(),
-                            icon: const Icon(Icons.menu, color: Colors.white),
-                            tooltip: 'Menu',
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Pharmacie de Garde',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.logout_outlined,
+      body: Column(
+        children: [
+          Container(
+            color: context.primaryDark,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.xs,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed:
+                              () => _scaffoldKey.currentState?.openDrawer(),
+                          icon: const Icon(Icons.menu, color: Colors.white),
+                          tooltip: 'Menu',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Pharmacie de Garde',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(
                               color: Colors.white,
+                              fontWeight: FontWeight.w700,
                             ),
-                            onPressed: () => _showLogoutDialog(context),
-                            tooltip: 'Déconnexion',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Padding(
-                        padding: const EdgeInsets.only(left: AppSpacing.sm),
-                        child: Text(
-                          searching
-                              ? 'Recherche'
-                              : 'Pharmacies de garde\nà proximité',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      if (_city != null && _commune != null) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        Padding(
-                          padding: const EdgeInsets.only(left: AppSpacing.sm),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_outlined,
-                                size: 16,
-                                color: Colors.white70,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$_commune, $_city',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.white70),
-                              ),
-                            ],
+                        IconButton(
+                          icon: const Icon(
+                            Icons.logout_outlined,
+                            color: Colors.white,
                           ),
+                          onPressed: () => _showLogoutDialog(context),
+                          tooltip: 'Déconnexion',
+                          visualDensity: VisualDensity.compact,
                         ),
                       ],
-                      const SizedBox(height: AppSpacing.lg),
-                      SearchBarWidget(
-                        controller: _searchController,
-                        onChanged: _onSearch,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Padding(
+                      padding: const EdgeInsets.only(left: AppSpacing.sm),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            searching ? 'Recherche' : 'Gardes à proximité',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 20,
+                              height: 1.2,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          if (_hasLocationLabel) ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on_outlined,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    _locationLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SearchBarWidget(
+                      controller: _searchController,
+                      onChanged: _onSearch,
+                    ),
+                  ],
                 ),
               ),
             ),
-            Expanded(
-              child:
-                  pharmacyState.isLoading
-                      ? const LoadingWidget(
-                        message: 'Chargement des pharmacies...',
-                      )
-                      : Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.lg,
-                              AppSpacing.lg,
-                              AppSpacing.lg,
-                              AppSpacing.sm,
-                            ),
-                            child: SectionHeader(
-                              eyebrow: searching ? 'Recherche' : 'À proximité',
-                              title:
-                                  searching
-                                      ? '${filteredPharmacies.length} résultat${filteredPharmacies.length > 1 ? 's' : ''}'
-                                      : 'Pharmacies de garde',
-                            ),
+          ),
+          Expanded(
+            child:
+                pharmacyState.isLoading
+                    ? const LoadingWidget(
+                      message: 'Chargement des pharmacies...',
+                    )
+                    : Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            AppSpacing.sm,
                           ),
-                          Expanded(
-                            child: _buildPharmacyList(filteredPharmacies),
+                          child: SectionHeader(
+                            eyebrow: searching ? 'Recherche' : 'À proximité',
+                            title:
+                                searching
+                                    ? '${filteredPharmacies.length} résultat${filteredPharmacies.length > 1 ? 's' : ''}'
+                                    : 'Pharmacies de garde',
                           ),
-                        ],
-                      ),
-            ),
-          ],
-        ),
+                        ),
+                        Expanded(child: _buildPharmacyList(filteredPharmacies)),
+                      ],
+                    ),
+          ),
+        ],
       ),
     );
   }
@@ -480,8 +482,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       );
     }
 
+    const fabClearance = kFloatingActionButtonMargin + 56 + 16;
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(
+        bottom: fabClearance + MediaQuery.of(context).padding.bottom,
+      ),
       itemCount: pharmacies.length,
       itemBuilder: (context, index) {
         final pharmacy = pharmacies[index];

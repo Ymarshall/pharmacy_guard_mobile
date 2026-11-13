@@ -20,6 +20,7 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isAdvancing = false;
 
   final List<OnboardingItemData> _onboardingItems = [
     OnboardingItemData(
@@ -63,6 +64,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
     if (!mounted) return;
     context.navigateToAndRemoveUntil(AppRoutes.login);
+  }
+
+  Future<void> _onPrimaryPressed() async {
+    if (_isAdvancing) return;
+    final lastIndex = _onboardingItems.length - 1;
+    if (_currentPage < lastIndex) {
+      setState(() => _isAdvancing = true);
+      await _pageController.animateToPage(
+        _currentPage + 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      if (mounted) setState(() => _isAdvancing = false);
+    } else {
+      await _completeOnboarding();
+    }
   }
 
   @override
@@ -111,16 +128,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: PrimaryButton(
                 label: isLast ? 'Terminer' : 'Suivant',
-                onPressed: () {
-                  if (!isLast) {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  } else {
-                    _completeOnboarding();
-                  }
-                },
+                onPressed: _onPrimaryPressed,
               ),
             ),
             const SizedBox(height: AppSpacing.xl2),

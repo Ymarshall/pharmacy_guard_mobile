@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'config/themes/app_theme.dart';
 import 'config/routes/app_routes.dart';
 import 'core/providers/providers.dart';
+import 'core/theme/theme_mode_controller.dart';
 import 'features/splash/presentation/pages/splash_page.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
@@ -44,7 +45,7 @@ class _PharmacieApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: AppTheme.getThemeMode(),
+      themeMode: ref.watch(themeModeProvider),
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash:

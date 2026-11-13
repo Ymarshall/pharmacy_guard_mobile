@@ -1,17 +1,20 @@
 import 'dart:io';
 
 class ApiConstants {
-  // Base URL
-  // Sur Android Emulator, utiliser 10.0.2.2 pour accéder à localhost de la machine hôte
-  // Sur iOS Simulator, localhost fonctionne directement
+  // Base URL. Override at build time, e.g.:
+  // flutter build apk --dart-define=API_BASE_URL=http://169.58.102.35:8081/api
+  // Sur Android Emulator, 10.0.2.2 pointe vers le localhost de la machine hôte.
+  // Sur iOS Simulator, localhost fonctionne directement.
+  static const String _apiBaseUrlFromDefine = String.fromEnvironment('API_BASE_URL');
+
   static String get baseUrl {
-    if (Platform.isAndroid) {
-      // Android Emulator
-      return 'http://10.0.2.2:8080/api';
-    } else {
-      // iOS Simulator ou autres plateformes
-      return 'http://localhost:8080/api';
+    if (_apiBaseUrlFromDefine.isNotEmpty) {
+      return _apiBaseUrlFromDefine;
     }
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8080/api';
+    }
+    return 'http://localhost:8080/api';
   }
 
   // Endpoints
