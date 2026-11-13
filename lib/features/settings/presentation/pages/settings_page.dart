@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/extensions/theme_extension.dart';
+import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../shared/styles/text_styles.dart';
 import '../../../../shared/extensions/context_extensions.dart';
 import '../../../../shared/widgets/icon_chip.dart';
@@ -20,7 +21,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _notificationsEnabled = true;
   bool _locationEnabled = true;
-  bool _darkModeEnabled = false;
   String _selectedLanguage = 'Français';
 
   @override
@@ -37,7 +37,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               _buildSwitchTile(
                 title: 'Notifications push',
-                subtitle: 'Recevoir des notifications pour les pharmacies de garde',
+                subtitle:
+                    'Recevoir des notifications pour les pharmacies de garde',
                 value: _notificationsEnabled,
                 onChanged: (value) {
                   setState(() {
@@ -68,7 +69,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               _buildSwitchTile(
                 title: 'Géolocalisation automatique',
-                subtitle: 'Utiliser votre position pour trouver les pharmacies proches',
+                subtitle:
+                    'Utiliser votre position pour trouver les pharmacies proches',
                 value: _locationEnabled,
                 onChanged: (value) {
                   setState(() {
@@ -96,12 +98,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               _buildSwitchTile(
                 title: 'Mode sombre',
-                subtitle: 'Activer le mode sombre automatique après 18h',
-                value: _darkModeEnabled,
+                subtitle: "Afficher l'application en thème sombre",
+                value: ref.watch(themeModeProvider) == ThemeMode.dark,
                 onChanged: (value) {
-                  setState(() {
-                    _darkModeEnabled = value;
-                  });
+                  ref.read(themeModeProvider.notifier).setDarkMode(value);
                 },
                 icon: Icons.dark_mode_outlined,
               ),
@@ -204,15 +204,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       leading: IconChip(icon: icon, size: 40, iconSize: 18),
       title: Text(
         title,
-        style: TextStyles.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
       ),
       trailing: Switch(
         value: value,
@@ -233,19 +229,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       leading: IconChip(icon: icon, size: 40, iconSize: 18),
       title: Text(
         title,
-        style: TextStyles.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
       ),
-      trailing: onTap != null
-          ? const Icon(Icons.chevron_right, color: AppColors.textSecondary)
-          : null,
+      trailing:
+          onTap != null
+              ? const Icon(Icons.chevron_right, color: AppColors.textSecondary)
+              : null,
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
@@ -254,112 +247,117 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showPrecisionDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Précision de localisation'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('Haute précision'),
-              subtitle: const Text('Utilise GPS, WiFi et réseaux mobiles'),
-              value: 'high',
-              groupValue: 'high',
-              onChanged: (value) {
-                Navigator.pop(context);
-              },
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            RadioListTile<String>(
-              title: const Text('Économie d\'énergie'),
-              subtitle: const Text('Utilise WiFi et réseaux mobiles uniquement'),
-              value: 'low',
-              groupValue: 'high',
-              onChanged: (value) {
-                Navigator.pop(context);
-              },
+            title: const Text('Précision de localisation'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: const Text('Haute précision'),
+                  subtitle: const Text('Utilise GPS, WiFi et réseaux mobiles'),
+                  value: 'high',
+                  groupValue: 'high',
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                  },
+                ),
+                RadioListTile<String>(
+                  title: const Text('Économie d\'énergie'),
+                  subtitle: const Text(
+                    'Utilise WiFi et réseaux mobiles uniquement',
+                  ),
+                  value: 'low',
+                  groupValue: 'high',
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fermer'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showLanguageDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Sélectionner la langue'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('Français'),
-              value: 'Français',
-              groupValue: _selectedLanguage,
-              onChanged: (value) {
-                setState(() {
-                  _selectedLanguage = value!;
-                });
-                Navigator.pop(context);
-              },
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            RadioListTile<String>(
-              title: const Text('English'),
-              value: 'English',
-              groupValue: _selectedLanguage,
-              onChanged: (value) {
-                setState(() {
-                  _selectedLanguage = value!;
-                });
-                Navigator.pop(context);
-              },
+            title: const Text('Sélectionner la langue'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: const Text('Français'),
+                  value: 'Français',
+                  groupValue: _selectedLanguage,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLanguage = value!;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+                RadioListTile<String>(
+                  title: const Text('English'),
+                  value: 'English',
+                  groupValue: _selectedLanguage,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLanguage = value!;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
   void _showClearCacheDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Effacer le cache'),
-        content: const Text(
-          'Êtes-vous sûr de vouloir supprimer toutes les données mises en cache ? '
-          'Cela peut affecter les performances hors ligne.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.showSnackBar('Cache effacé avec succès');
-            },
-            child: const Text(
-              'Effacer',
-              style: TextStyle(color: AppColors.error),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
+            title: const Text('Effacer le cache'),
+            content: const Text(
+              'Êtes-vous sûr de vouloir supprimer toutes les données mises en cache ? '
+              'Cela peut affecter les performances hors ligne.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.showSnackBar('Cache effacé avec succès');
+                },
+                child: const Text(
+                  'Effacer',
+                  style: TextStyle(color: AppColors.error),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -371,18 +369,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showPrivacyPolicy() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const PrivacyPolicyPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()),
     );
   }
 
   void _showTermsOfService() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const TermsOfServicePage(),
-      ),
+      MaterialPageRoute(builder: (context) => const TermsOfServicePage()),
     );
   }
 }
@@ -470,15 +464,10 @@ class PrivacyPolicyPage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyles.titleLarge.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyles.bodyMedium,
-          ),
+          Text(content, style: TextStyles.bodyMedium),
         ],
       ),
     );
@@ -498,10 +487,7 @@ class TermsOfServicePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Conditions d\'Utilisation',
-              style: TextStyles.displaySmall,
-            ),
+            Text('Conditions d\'Utilisation', style: TextStyles.displaySmall),
             const SizedBox(height: 24),
             Text(
               'Dernière mise à jour : ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
@@ -568,18 +554,12 @@ class TermsOfServicePage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyles.titleLarge.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyles.bodyMedium,
-          ),
+          Text(content, style: TextStyles.bodyMedium),
         ],
       ),
     );
   }
 }
-

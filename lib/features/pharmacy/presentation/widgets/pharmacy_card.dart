@@ -207,38 +207,51 @@ class _PharmacyCardState extends State<PharmacyCard>
       fontSize: 12,
       height: 1.2,
     );
-    return Row(
-      children: [
-        Icon(
-          Icons.directions_car_outlined,
-          size: 14,
-          color: context.textTertiary,
-        ),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            '${_formatKm(distance)} · ${DistanceUtils.formatDrivingTime(distance)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: style,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Icon(
-          Icons.directions_walk_outlined,
-          size: 14,
-          color: context.textTertiary,
-        ),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            DistanceUtils.formatWalkingTime(distance),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: style,
-          ),
-        ),
-      ],
+    final distanceLabel = _formatKm(distance);
+    final drivingTime = DistanceUtils.formatDrivingTime(distance);
+    final walkingTime = DistanceUtils.formatWalkingTime(distance);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final label = fitDistanceDrivingLabel(
+          distance: distanceLabel,
+          drivingTime: drivingTime,
+          walkingTime: walkingTime,
+          maxWidth: constraints.maxWidth,
+          style: style ?? const TextStyle(fontSize: 12),
+        );
+        return Row(
+          children: [
+            Icon(
+              Icons.directions_car_outlined,
+              size: 14,
+              color: context.textTertiary,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.directions_walk_outlined,
+              size: 14,
+              color: context.textTertiary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              walkingTime,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: style,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -341,4 +354,33 @@ class _PharmacyCardState extends State<PharmacyCard>
     }
     return parts.isNotEmpty ? parts.join(', ') : 'Adresse non disponible';
   }
+}
+
+/// « 485 m · 1 min » si la ligne tient, sinon seulement la distance.
+String fitDistanceDrivingLabel({
+  required String distance,
+  required String drivingTime,
+  required String walkingTime,
+  required double maxWidth,
+  required TextStyle style,
+  double iconSize = 14,
+  double iconGap = 4,
+  double groupGap = 8,
+}) {
+  final full = '$distance · $drivingTime';
+
+  double widthOf(String text) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    return painter.width;
+  }
+
+  final trailing = iconSize + iconGap + widthOf(walkingTime);
+  final leading = iconSize + iconGap;
+  final needed = leading + widthOf(full) + groupGap + trailing;
+  if (needed <= maxWidth) return full;
+  return distance;
 }

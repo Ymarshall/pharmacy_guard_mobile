@@ -82,6 +82,9 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [
+          sharedPreferencesInstanceProvider.overrideWithValue(prefs),
+        ],
         child: MaterialApp(
           theme: AppTheme.light,
           home: const SettingsPage(),

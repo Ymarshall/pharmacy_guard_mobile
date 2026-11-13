@@ -11,38 +11,42 @@ abstract final class AppTheme {
   static ThemeData get lightTheme => light;
   static ThemeData get darkTheme => dark;
 
-  /// Mode nuit automatique après 18h (comportement existant).
-  static ThemeMode getThemeMode() {
-    final hour = DateTime.now().hour;
-    return hour >= 18 || hour < 6 ? ThemeMode.dark : ThemeMode.light;
+  /// Thème clair par défaut. Le mode sombre ne s'active que si
+  /// l'utilisateur l'a choisi (plus de bascule automatique après 18h).
+  static ThemeMode resolveThemeMode({bool? darkModeEnabled}) {
+    return darkModeEnabled == true ? ThemeMode.dark : ThemeMode.light;
   }
+
+  /// Conservé pour les appels existants : toujours le thème clair.
+  static ThemeMode getThemeMode() => resolveThemeMode();
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
-    final colorScheme = isDark
-        ? const ColorScheme.dark(
-            primary: AppColors.darkPrimary,
-            onPrimary: AppColors.darkBackground,
-            secondary: AppColors.darkSecondary,
-            onSecondary: AppColors.darkBackground,
-            tertiary: AppColors.darkAccent,
-            surface: AppColors.darkSurface,
-            error: AppColors.darkError,
-            onError: AppColors.darkBackground,
-            onSurface: AppColors.darkOnSurface,
-          )
-        : const ColorScheme.light(
-            primary: AppColors.primary,
-            onPrimary: Colors.white,
-            secondary: AppColors.secondary,
-            onSecondary: Colors.white,
-            tertiary: AppColors.info,
-            surface: AppColors.surface,
-            error: AppColors.error,
-            onError: Colors.white,
-            onSurface: AppColors.onSurface,
-          );
+    final colorScheme =
+        isDark
+            ? const ColorScheme.dark(
+              primary: AppColors.darkPrimary,
+              onPrimary: AppColors.darkBackground,
+              secondary: AppColors.darkSecondary,
+              onSecondary: AppColors.darkBackground,
+              tertiary: AppColors.darkAccent,
+              surface: AppColors.darkSurface,
+              error: AppColors.darkError,
+              onError: AppColors.darkBackground,
+              onSurface: AppColors.darkOnSurface,
+            )
+            : const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              secondary: AppColors.secondary,
+              onSecondary: Colors.white,
+              tertiary: AppColors.info,
+              surface: AppColors.surface,
+              error: AppColors.error,
+              onError: Colors.white,
+              onSurface: AppColors.onSurface,
+            );
 
     final textTheme = GoogleFonts.plusJakartaSansTextTheme(
       TextTheme(
@@ -71,6 +75,8 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor:
           isDark ? AppColors.darkBackground : AppColors.background,
+      canvasColor: isDark ? AppColors.darkBackground : AppColors.background,
+      cardColor: isDark ? AppColors.darkSurface : AppColors.surface,
       textTheme: textTheme,
       elevatedButtonTheme: WidgetThemes.elevatedButtonTheme(brightness),
       outlinedButtonTheme: WidgetThemes.outlinedButtonTheme(brightness),
