@@ -61,8 +61,6 @@ abstract final class AppColors {
   static const Color cardBorder = border;
 
   // Pharmacies
-  static const Color pharmacyOpen = primary;
-  static const Color pharmacyClosed = Color(0xFFD32F2F);
   static const Color pharmacyOnDuty = warning;
 
   // Ombres très légères (conservées pour les rares élévations)

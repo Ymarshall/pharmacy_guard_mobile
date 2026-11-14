@@ -87,8 +87,9 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pump();
-    expect(find.text('Ouverte'), findsWidgets);
-    await shoot('10-ouverte');
+    expect(find.text('Ouverte'), findsNothing);
+    expect(find.text('Fermée'), findsNothing);
+    await shoot('10-recherche-sans-ouverte');
 
     final featured = screenshotPharmacies[1];
     await tester.pumpWidget(
