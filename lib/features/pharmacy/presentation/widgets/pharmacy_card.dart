@@ -211,11 +211,13 @@ class _PharmacyCardState extends State<PharmacyCard>
     final drivingTime = DistanceUtils.formatDrivingTime(distance);
     final walkingTime = DistanceUtils.formatWalkingTime(distance);
 
+    final driving = '$distanceLabel · $drivingTime';
     return LayoutBuilder(
       builder: (context, constraints) {
-        final label = fitDistanceDrivingLabel(
-          distance: distanceLabel,
-          drivingTime: drivingTime,
+        // Le temps en voiture (estimé) reste toujours visible ; le temps à
+        // pied n'apparaît que s'il reste de la place.
+        final showWalking = fitsWalkingTime(
+          driving: driving,
           walkingTime: walkingTime,
           maxWidth: constraints.maxWidth,
           style: style ?? const TextStyle(fontSize: 12),
@@ -230,25 +232,27 @@ class _PharmacyCardState extends State<PharmacyCard>
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                label,
+                driving,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: style,
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.directions_walk_outlined,
-              size: 14,
-              color: context.textTertiary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              walkingTime,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: style,
-            ),
+            if (showWalking) ...[
+              const SizedBox(width: 8),
+              Icon(
+                Icons.directions_walk_outlined,
+                size: 14,
+                color: context.textTertiary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                walkingTime,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style,
+              ),
+            ],
           ],
         );
       },
@@ -356,10 +360,10 @@ class _PharmacyCardState extends State<PharmacyCard>
   }
 }
 
-/// « 485 m · 1 min » si la ligne tient, sinon seulement la distance.
-String fitDistanceDrivingLabel({
-  required String distance,
-  required String drivingTime,
+/// `true` si « 🚗 485 m · ≈ 4 min  🚶 ≈ 9 min » tient sur la ligne.
+/// Sinon on garde seulement la distance et le temps en voiture.
+bool fitsWalkingTime({
+  required String driving,
   required String walkingTime,
   required double maxWidth,
   required TextStyle style,
@@ -367,8 +371,6 @@ String fitDistanceDrivingLabel({
   double iconGap = 4,
   double groupGap = 8,
 }) {
-  final full = '$distance · $drivingTime';
-
   double widthOf(String text) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
@@ -378,9 +380,13 @@ String fitDistanceDrivingLabel({
     return painter.width;
   }
 
-  final trailing = iconSize + iconGap + widthOf(walkingTime);
-  final leading = iconSize + iconGap;
-  final needed = leading + widthOf(full) + groupGap + trailing;
-  if (needed <= maxWidth) return full;
-  return distance;
+  final needed =
+      iconSize +
+      iconGap +
+      widthOf(driving) +
+      groupGap +
+      iconSize +
+      iconGap +
+      widthOf(walkingTime);
+  return needed <= maxWidth;
 }

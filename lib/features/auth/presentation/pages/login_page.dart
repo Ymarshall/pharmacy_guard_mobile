@@ -12,6 +12,7 @@ import '../../../../config/routes/app_routes.dart';
 import '../../../../core/providers/providers.dart';
 import '../providers/auth_notifier.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/ivorian_phone.dart';
 import '../../../../core/services/permission_service.dart';
 
@@ -189,35 +190,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (!hasPermission) {
       // Demander la permission de géolocalisation
+      LocationPrompt.askedThisSession = true;
       hasPermission = await permissionService.requestLocationPermission();
     }
 
     if (!hasPermission) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext dialogContext) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text('Permission requise'),
-              content: const Text(
-                'La géolocalisation est nécessaire pour créer votre compte. '
-                'Veuillez autoriser l\'accès à votre position dans les paramètres de l\'application.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      }
+      // Le compte existe déjà : on continue sans position.
+      _continueWithoutLocation(
+        'Localisation non autorisée : activez-la pour voir les gardes '
+        'les plus proches de vous.',
+      );
       return;
     }
 
@@ -393,49 +375,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         Navigator.pop(context);
       }
 
-      String errorMessage = 'Erreur lors de la création de votre compte';
-
-      // Messages d'erreur plus explicites
-      if (e.toString().contains('location') ||
-          e.toString().contains('position')) {
-        errorMessage =
-            'Impossible de récupérer votre position.\n\n'
-            'Sur le simulateur, vous devez configurer une position :\n'
-            '• iOS Simulator : Features > Location > Custom Location...\n'
-            '• Android Emulator : Utilisez les contrôles de localisation dans la barre latérale';
-      } else {
-        errorMessage = 'Erreur : ${e.toString()}';
-      }
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext dialogContext) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text('Erreur'),
-              content: Text(errorMessage),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      }
+      _continueWithoutLocation(
+        e is LocationException
+            ? '${e.message} Activez la localisation pour voir les gardes '
+                'les plus proches de vous.'
+            : 'Position non enregistrée. Vous pourrez activer la '
+                'localisation depuis l\'accueil.',
+      );
     }
+  }
+
+  /// Sans position, l'utilisateur arrive quand même sur la liste des gardes ;
+  /// l'accueil affiche une bannière pour activer la localisation.
+  void _continueWithoutLocation(String message) {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (!ref.read(authNotifierProvider).isAuthenticated) return;
+    if (_resumePendingAction()) return;
+    context.showSnackBar(message, duration: const Duration(seconds: 5));
+    context.navigateToAndRemoveUntil(AppRoutes.home);
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
-    _isLoading = authState.isLoading || _isLoading;
+    final isLoading = authState.isLoading || _isLoading;
 
     return Scaffold(
       backgroundColor: context.background,
@@ -476,7 +440,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         label: 'Numéro de téléphone',
                         hint: '+225 07 12 34 56 78',
                         keyboardType: TextInputType.phone,
-                        enabled: !_isLoading,
+                        enabled: !isLoading,
                         prefixIcon: Icon(
                           Icons.phone_outlined,
                           color: context.primary,
@@ -516,10 +480,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 AppSpacing.lg,
               ),
               child: PrimaryButton(
-                label: _isLoading ? 'Connexion...' : 'Se connecter',
+                label: isLoading ? 'Connexion...' : 'Se connecter',
                 icon: Icons.login_outlined,
-                isLoading: _isLoading,
-                onPressed: _isLoading ? null : _handleLogin,
+                isLoading: isLoading,
+                onPressed: isLoading ? null : _handleLogin,
               ),
             ),
           ],
