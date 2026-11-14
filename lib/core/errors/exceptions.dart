@@ -57,6 +57,9 @@ class PermissionException extends AppException {
 }
 
 /// Location related exceptions
+enum LocationIssue { serviceDisabled, denied, deniedForever, timeout, unknown }
+
 class LocationException extends AppException {
-  const LocationException(super.message);
+  final LocationIssue issue;
+  const LocationException(super.message, {this.issue = LocationIssue.unknown});
 }

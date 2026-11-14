@@ -332,7 +332,7 @@ class PharmacyDetailPage extends ConsumerWidget {
                   Icon(Icons.straighten, color: context.primary, size: 20),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
-                    DistanceUtils.formatDistance(distance),
+                    '${DistanceUtils.formatDistance(distance)} à vol d\'oiseau',
                     style: Theme.of(
                       context,
                     ).textTheme.bodyLarge?.copyWith(color: context.onSurface),
@@ -368,6 +368,14 @@ class PharmacyDetailPage extends ConsumerWidget {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Temps estimés : le trajet réel dépend de l\'itinéraire et '
+                'de la circulation. Touchez « Itinéraire » pour le détail.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.textTertiary,
+                ),
               ),
             ],
           ),
