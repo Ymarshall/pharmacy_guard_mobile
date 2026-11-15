@@ -152,8 +152,10 @@ class PharmacyDetailPage extends ConsumerWidget {
                   height: 1.2,
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              _buildStatusBadge(),
+              if (pharmacy.isOnDuty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _buildStatusBadge(),
+              ],
               if (pharmacy.averageRating != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _buildRatingDisplay(pharmacy.averageRating!),
@@ -186,22 +188,9 @@ class PharmacyDetailPage extends ConsumerWidget {
   }
 
   Widget _buildStatusBadge() {
-    Color badgeColor;
-    String badgeText;
-
-    if (pharmacy.isOnDuty) {
-      badgeColor = AppColors.pharmacyOnDuty;
-      badgeText = 'De garde';
-    } else if (pharmacy.isOpen) {
-      badgeColor = AppColors.pharmacyOpen;
-      badgeText = 'Ouverte';
-    } else {
-      badgeColor = AppColors.pharmacyClosed;
-      badgeText = 'Fermée';
-    }
-
+    const badgeColor = AppColors.pharmacyOnDuty;
     return StatusBadge(
-      label: badgeText,
+      label: 'De garde',
       color: badgeColor.withValues(alpha: 0.12),
       textColor: badgeColor,
     );

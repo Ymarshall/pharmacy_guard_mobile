@@ -34,8 +34,8 @@ class _PharmacyCardState extends State<PharmacyCard>
   @override
   void initState() {
     super.initState();
-    // Animation pulsante pour le badge de statut si ouvert
-    if (widget.pharmacy.isOpen || widget.pharmacy.isOnDuty) {
+    // Animation pulsante uniquement pour le badge « De garde ».
+    if (widget.pharmacy.isOnDuty) {
       _pulseController = AnimationController(
         vsync: this,
         duration: const Duration(seconds: 2),
@@ -45,7 +45,7 @@ class _PharmacyCardState extends State<PharmacyCard>
 
   @override
   void dispose() {
-    if (widget.pharmacy.isOpen || widget.pharmacy.isOnDuty) {
+    if (widget.pharmacy.isOnDuty) {
       _pulseController.dispose();
     }
     super.dispose();
@@ -103,18 +103,19 @@ class _PharmacyCardState extends State<PharmacyCard>
                   onTap: widget.onTap,
                   child: Row(
                     children: [
-                      _buildStatusBadge(),
-                      if (widget.pharmacy.hasGps &&
-                          widget.pharmacy.distance != null) ...[
+                      if (widget.pharmacy.isOnDuty) ...[
+                        _buildStatusBadge(),
                         const SizedBox(width: 8),
+                      ],
+                      if (widget.pharmacy.hasGps &&
+                          widget.pharmacy.distance != null)
                         Expanded(
                           child: _buildDistanceLine(
                             context,
                             widget.pharmacy.distance!,
                           ),
-                        ),
-                      ] else if (!widget.pharmacy.hasGps) ...[
-                        const SizedBox(width: 8),
+                        )
+                      else if (!widget.pharmacy.hasGps)
                         Expanded(
                           child: Text(
                             'Localisation indisponible',
@@ -128,7 +129,6 @@ class _PharmacyCardState extends State<PharmacyCard>
                             ),
                           ),
                         ),
-                      ],
                     ],
                   ),
                 ),
@@ -159,46 +159,23 @@ class _PharmacyCardState extends State<PharmacyCard>
   }
 
   Widget _buildStatusBadge() {
-    Color badgeColor;
-    String badgeText;
-    IconData badgeIcon;
-
-    if (widget.pharmacy.isOnDuty) {
-      badgeColor = AppColors.pharmacyOnDuty;
-      badgeText = 'De garde';
-      badgeIcon = Icons.local_pharmacy_outlined;
-    } else if (widget.pharmacy.isOpen) {
-      badgeColor = AppColors.pharmacyOpen;
-      badgeText = 'Ouverte';
-      badgeIcon = Icons.check_circle_outline;
-    } else {
-      badgeColor = AppColors.pharmacyClosed;
-      badgeText = 'Fermée';
-      badgeIcon = Icons.cancel_outlined;
-    }
-
+    const badgeColor = AppColors.pharmacyOnDuty;
     final Widget badge = StatusBadge(
-      label: badgeText,
-      icon: badgeIcon,
+      label: 'De garde',
+      icon: Icons.local_pharmacy_outlined,
       color: badgeColor.withValues(alpha: 0.12),
       textColor: badgeColor,
     );
 
-    // Animation pulsante pour les pharmacies ouvertes
-    if ((widget.pharmacy.isOpen || widget.pharmacy.isOnDuty) &&
-        widget.pharmacy.isOnDuty) {
-      return AnimatedBuilder(
-        animation: _pulseController,
-        builder: (context, child) {
-          return Opacity(
-            opacity: 0.8 + (_pulseController.value * 0.2),
-            child: badge,
-          );
-        },
-      );
-    }
-
-    return badge;
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.8 + (_pulseController.value * 0.2),
+          child: badge,
+        );
+      },
+    );
   }
 
   Widget _buildDistanceLine(BuildContext context, double distance) {
